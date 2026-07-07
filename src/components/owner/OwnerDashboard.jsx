@@ -85,11 +85,6 @@ export default function OwnerDashboard({ setTab, setShopMode, setSearchTerm }) {
           <h1>Welcome, Admin</h1>
           <p style={{ color: 'var(--text-muted)' }}>Daily business operations summary for Pawara ServicePro</p>
         </div>
-        <div style={{ display: 'flex', gap: '15px' }}>
-          <button className="btn-secondary" onClick={fetchStats} style={{ gap: '8px' }}>
-            Refresh
-          </button>
-        </div>
       </div>
 
       {/* SSE Real-Time Notification Banners */}
@@ -110,7 +105,7 @@ export default function OwnerDashboard({ setTab, setShopMode, setSearchTerm }) {
               <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
                 <Bell size={24} color="#8b5cf6" className="bounce" />
                 <div>
-                  <strong style={{ color: '#fff' }}>New Maintenance Request Received!</strong>
+                  <strong style={{ color: 'var(--text-main)' }}>New Maintenance Request Received!</strong>
                   <div style={{ fontSize: '0.85rem', color: 'var(--text-main)', marginTop: '2px' }}>
                     Customer: <strong>{alert.customerName}</strong> ({alert.customerType}) — <em>"{alert.description}"</em>
                   </div>
@@ -201,14 +196,14 @@ export default function OwnerDashboard({ setTab, setShopMode, setSearchTerm }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
               {stats.pendingRequests.map((req) => (
                 <div key={req.id} style={{
-                  background: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid rgba(255, 255, 255, 0.05)',
+                  background: 'rgba(0, 0, 0, 0.02)',
+                  border: '1px solid rgba(0, 0, 0, 0.05)',
                   borderRadius: '10px',
                   padding: '16px',
                   position: 'relative'
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <strong style={{ color: '#fff', fontSize: '0.95rem' }}>{req.customer?.name}</strong>
+                    <strong style={{ color: 'var(--text-main)', fontSize: '0.95rem' }}>{req.customer?.name}</strong>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                       {new Date(req.createdAt).toLocaleDateString()}
                     </span>
@@ -234,7 +229,7 @@ export default function OwnerDashboard({ setTab, setShopMode, setSearchTerm }) {
               color: 'var(--text-muted)'
             }}>
               <CheckCircle size={40} color="var(--color-success)" style={{ marginBottom: '10px' }} />
-              <p style={{ fontWeight: '500', color: '#fff' }}>No Maintenance Requests</p>
+              <p style={{ fontWeight: '500', color: 'var(--text-main)' }}>No Maintenance Requests</p>
               <p style={{ fontSize: '0.85rem' }}>All service requests have been processed successfully!</p>
             </div>
           )}
@@ -265,7 +260,7 @@ export default function OwnerDashboard({ setTab, setShopMode, setSearchTerm }) {
                   alignItems: 'center'
                 }}>
                   <div>
-                    <strong style={{ color: '#fff', fontSize: '0.95rem' }}>{reminder.customerName}</strong>
+                    <strong style={{ color: 'var(--text-main)', fontSize: '0.95rem' }}>{reminder.customerName}</strong>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
                       Contract Amount: <strong style={{ color: 'var(--text-main)' }}>₹{reminder.amount.toFixed(2)}</strong>
                     </div>
@@ -289,7 +284,7 @@ export default function OwnerDashboard({ setTab, setShopMode, setSearchTerm }) {
               color: 'var(--text-muted)'
             }}>
               <CheckCircle size={40} color="var(--color-success)" style={{ marginBottom: '10px' }} />
-              <p style={{ fontWeight: '500', color: '#fff' }}>No Pending Contract Payments</p>
+              <p style={{ fontWeight: '500', color: 'var(--text-main)' }}>No Pending Contract Payments</p>
               <p style={{ fontSize: '0.85rem' }}>All monthly maintenance contract accounts are fully paid!</p>
             </div>
           )}
