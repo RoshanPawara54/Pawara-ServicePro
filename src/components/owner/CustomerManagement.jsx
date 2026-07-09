@@ -294,6 +294,38 @@ export default function CustomerManagement() {
     }
   };
 
+  const handleMarkBillAsPaid = async (billId) => {
+    if (!window.confirm('Are you sure you want to mark this material invoice as paid?')) {
+      return;
+    }
+    try {
+      const res = await apiFetch(`http://localhost:8080/api/owner/bills/${billId}/pay`, {
+        method: 'PUT'
+      });
+      if (!res.ok) throw new Error('Failed to mark invoice as paid');
+      setSuccess('Invoice marked as paid successfully!');
+      handleSelectCustomer(selectedCustomerId);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleDeleteBill = async (billId) => {
+    if (!window.confirm('Are you sure you want to delete this invoice? This will reset the associated maintenance request status to PENDING.')) {
+      return;
+    }
+    try {
+      const res = await apiFetch(`http://localhost:8080/api/owner/bills/${billId}`, {
+        method: 'DELETE'
+      });
+      if (!res.ok) throw new Error('Failed to delete invoice');
+      setSuccess('Invoice deleted successfully!');
+      handleSelectCustomer(selectedCustomerId);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const handleItemChange = (index, field, value) => {
     const updated = [...billItems];
     updated[index][field] = value;
@@ -619,6 +651,7 @@ export default function CustomerManagement() {
                     <th>Labour Charge</th>
                     <th>Material Cost</th>
                     <th>Status</th>
+                    <th className="actions-cell">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -631,15 +664,37 @@ export default function CustomerManagement() {
                         <td>₹{b.labourCharge.toFixed(2)}</td>
                         <td>₹{b.materialCost.toFixed(2)}</td>
                         <td>
-                          <span className={`badge ${b.status === 'PAID' ? 'badge-paid' : 'badge-unpaid'}`}>
+                          <span className={`badge ${b.status === 'PAID' ? 'badge-completed' : 'badge-unpaid'}`}>
                             {b.status}
                           </span>
+                        </td>
+                        <td className="actions-cell">
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            {b.status !== 'PAID' && (
+                              <button 
+                                className="btn-secondary btn-small"
+                                onClick={() => handleMarkBillAsPaid(b.id)}
+                                title="Mark as Paid"
+                                style={{ padding: '6px 10px', color: '#047857', borderColor: 'rgba(5, 150, 105, 0.2)', background: 'rgba(5, 150, 105, 0.05)' }}
+                              >
+                                ✓ Paid
+                              </button>
+                            )}
+                            <button 
+                              className="btn-danger btn-small"
+                              onClick={() => handleDeleteBill(b.id)}
+                              title="Delete Invoice"
+                              style={{ padding: '6px 10px' }}
+                            >
+                              🗑️ Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '15px' }}>
+                      <td colSpan="7" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '15px' }}>
                         No material bills generated.
                       </td>
                     </tr>

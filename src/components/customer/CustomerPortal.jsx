@@ -114,6 +114,24 @@ export default function CustomerPortal() {
     }
   };
 
+  const handlePayBillCustomer = async (billId) => {
+    if (!window.confirm('Are you sure you want to mark this material invoice as paid?')) {
+      return;
+    }
+    setError('');
+    setSuccess('');
+    try {
+      const res = await apiFetch(`http://localhost:8080/api/customer/bills/${billId}/pay`, {
+        method: 'PUT'
+      });
+      if (!res.ok) throw new Error('Failed to record payment');
+      setSuccess('Invoice marked as paid successfully!');
+      fetchCustomerData();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -437,17 +455,28 @@ export default function CustomerPortal() {
                             <td><strong>{b.billNumber}</strong></td>
                             <td>₹{b.totalAmount.toFixed(2)}</td>
                             <td>
-                              <span className={`badge ${b.status === 'PAID' ? 'badge-paid' : 'badge-unpaid'}`}>
+                              <span className={`badge ${b.status === 'PAID' ? 'badge-completed' : 'badge-unpaid'}`}>
                                 {b.status}
                               </span>
                             </td>
                             <td>
-                              <button 
-                                className="btn-secondary btn-small"
-                                onClick={() => setSelectedBillDetail(b)}
-                              >
-                                View
-                              </button>
+                              <div style={{ display: 'flex', gap: '8px' }}>
+                                <button 
+                                  className="btn-secondary btn-small"
+                                  onClick={() => setSelectedBillDetail(b)}
+                                >
+                                  View
+                                </button>
+                                {b.status !== 'PAID' && (
+                                  <button 
+                                    className="btn-primary btn-small"
+                                    onClick={() => handlePayBillCustomer(b.id)}
+                                    style={{ background: '#047857', borderColor: '#047857', padding: '6px 10px' }}
+                                  >
+                                    Tick Paid
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         ))

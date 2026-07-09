@@ -169,6 +169,68 @@ public class BillController {
         return ResponseEntity.ok(updatedBill);
     }
 
+    @DeleteMapping("/api/owner/bills/{id}")
+    public ResponseEntity<?> deleteBill(@PathVariable Long id) {
+        Optional<Bill> billOpt = billRepository.findById(id);
+        if (billOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Bill bill = billOpt.get();
+        if (bill.getMaintenanceRequest() != null) {
+            MaintenanceRequest request = bill.getMaintenanceRequest();
+            request.setStatus("PENDING");
+            requestRepository.save(request);
+        }
+
+        if (bill.getCustomer() != null) {
+            List<Payment> associatedPayments = paymentRepository.findByCustomerIdOrderByPaymentDateDesc(bill.getCustomer().getId());
+            for (Payment p : associatedPayments) {
+                if (Objects.equals(p.getReferenceId(), bill.getId()) && "MATERIAL_BILL_PAYMENT".equals(p.getPaymentType())) {
+                    paymentRepository.delete(p);
+                }
+            }
+        }
+
+        billRepository.delete(bill);
+        return ResponseEntity.ok(Map.of("message", "Bill deleted successfully"));
+    }
+
+    @PutMapping("/api/customer/bills/{id}/pay")
+    public ResponseEntity<?> customerPayBill(@PathVariable Long id) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Optional<User> userOpt = userRepository.findByUsername(username);
+
+        if (userOpt.isEmpty() || userOpt.get().getCustomer() == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Customer account not found"));
+        }
+
+        Optional<Bill> billOpt = billRepository.findById(id);
+        if (billOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Bill bill = billOpt.get();
+        if (!bill.getCustomer().getId().equals(userOpt.get().getCustomer().getId())) {
+            return ResponseEntity.status(403).body(Map.of("message", "Unauthorized to pay this bill"));
+        }
+
+        bill.setStatus("PAID");
+        Bill updatedBill = billRepository.save(bill);
+
+        Payment payment = Payment.builder()
+                .customer(bill.getCustomer())
+                .paymentType("MATERIAL_BILL_PAYMENT")
+                .amount(bill.getTotalAmount())
+                .paymentDate(LocalDate.now())
+                .referenceId(bill.getId())
+                .notes("Payment recorded by customer: " + bill.getBillNumber())
+                .build();
+        paymentRepository.save(payment);
+
+        return ResponseEntity.ok(updatedBill);
+    }
+
     // --- Customer APIs ---
 
     @GetMapping("/api/customer/bills")
