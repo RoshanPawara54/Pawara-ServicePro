@@ -454,7 +454,7 @@ export default function CustomerManagement() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'flex-end' }}>
               {credentials && (
                 <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                  Portal Login: <strong style={{ color: '#fff' }}>{credentials.username}</strong>
+                  Portal Login: <strong style={{ color: 'var(--text-main)' }}>{credentials.username}</strong>
                 </div>
               )}
               <div style={{ display: 'flex', gap: '10px' }}>
@@ -473,7 +473,7 @@ export default function CustomerManagement() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
               {/* Contract Card */}
               <div className="glass-card">
-                <h3 style={{ marginBottom: '15px', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '10px' }}>
+                <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', borderBottom: '1px solid rgba(0,0,0,0.08)', paddingBottom: '10px' }}>
                   Contract Status
                 </h3>
                 {contract ? (
@@ -512,7 +512,7 @@ export default function CustomerManagement() {
 
               {/* Payments History Card */}
               <div className="glass-card">
-                <h3 style={{ marginBottom: '15px', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '10px' }}>
+                <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', borderBottom: '1px solid rgba(0,0,0,0.08)', paddingBottom: '10px' }}>
                   Recent Payments Log
                 </h3>
                 <div className="data-table-container">
@@ -552,15 +552,15 @@ export default function CustomerManagement() {
 
             {/* Maintenance Requests Card */}
             <div className="glass-card">
-              <h3 style={{ marginBottom: '15px', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '10px' }}>
+              <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', borderBottom: '1px solid rgba(0,0,0,0.08)', paddingBottom: '10px' }}>
                 Maintenance Requests & Action
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                 {requests.length > 0 ? (
                   requests.map((req) => (
                     <div key={req.id} style={{
-                      background: 'rgba(255,255,255,0.02)',
-                      border: '1px solid rgba(255,255,255,0.05)',
+                      background: 'rgba(0,0,0,0.02)',
+                      border: '1px solid rgba(0,0,0,0.05)',
                       borderRadius: '10px',
                       padding: '15px'
                     }}>
@@ -572,7 +572,7 @@ export default function CustomerManagement() {
                           {new Date(req.createdAt).toLocaleDateString()}
                         </span>
                       </div>
-                      <p style={{ fontSize: '0.9rem', color: '#fff' }}>{req.description}</p>
+                      <p style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}>{req.description}</p>
                       
                       {req.status === 'PENDING' && (
                         <div style={{ marginTop: '12px', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
@@ -606,7 +606,7 @@ export default function CustomerManagement() {
 
           {/* Bills List Card */}
           <div className="glass-card">
-            <h3 style={{ marginBottom: '15px', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '10px' }}>
+            <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', borderBottom: '1px solid rgba(0,0,0,0.08)', paddingBottom: '10px' }}>
               Material Bills Generated
             </h3>
             <div className="data-table-container">
@@ -685,7 +685,7 @@ export default function CustomerManagement() {
                   filteredCustomers.map((cust) => (
                     <tr key={cust.id}>
                       <td>
-                        <strong style={{ color: '#fff' }}>{cust.name}</strong>
+                        <strong style={{ color: 'var(--text-main)' }}>{cust.name}</strong>
                       </td>
                       <td>
                         <span className="badge badge-quotation">{cust.customerType}</span>
@@ -784,7 +784,7 @@ export default function CustomerManagement() {
             <form onSubmit={handleCreateMaterialBill}>
               {/* Dynamic items input */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <h4 style={{ fontSize: '0.9rem', color: '#fff' }}>Materials Detail</h4>
+                <h4 style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}>Materials Detail</h4>
                 <button type="button" className="btn-secondary btn-small" onClick={() => setBillItems([...billItems, { itemName: '', quantity: '1', unitPrice: '0', unitCost: '0' }])}>
                   + Add Item
                 </button>

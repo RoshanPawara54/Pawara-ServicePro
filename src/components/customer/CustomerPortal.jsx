@@ -319,7 +319,7 @@ export default function CustomerPortal() {
           <div className="glass-card" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
             <div>
               <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Active Maintenance Contract</span>
-              <h3 style={{ marginTop: '5px', color: '#fff' }}>
+              <h3 style={{ marginTop: '5px', color: 'var(--text-main)' }}>
                 {contract ? `Monthly Package` : `No Active Contract`}
               </h3>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
@@ -354,7 +354,7 @@ export default function CustomerPortal() {
             {/* Submit Request Form */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
               <div className="glass-card">
-                <h3 style={{ marginBottom: '15px', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Send size={18} color="var(--color-primary)" />
                   Submit Maintenance Request
                 </h3>
@@ -379,7 +379,7 @@ export default function CustomerPortal() {
 
               {/* Request Logs */}
               <div className="glass-card">
-                <h3 style={{ marginBottom: '15px', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Clock size={18} color="var(--color-warning)" />
                   Request History
                 </h3>
@@ -387,8 +387,8 @@ export default function CustomerPortal() {
                   {requests.length > 0 ? (
                     requests.map((req) => (
                       <div key={req.id} style={{
-                        background: 'rgba(255, 255, 255, 0.02)',
-                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                        background: 'rgba(0, 0, 0, 0.02)',
+                        border: '1px solid rgba(0, 0, 0, 0.05)',
                         borderRadius: '8px',
                         padding: '12px'
                       }}>
@@ -416,7 +416,7 @@ export default function CustomerPortal() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
               {/* Material Invoices */}
               <div className="glass-card">
-                <h3 style={{ marginBottom: '15px', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <FileText size={18} color="var(--color-primary)" />
                   Material Invoices (Uncovered Cost)
                 </h3>
@@ -465,7 +465,7 @@ export default function CustomerPortal() {
 
               {/* Payments log */}
               <div className="glass-card">
-                <h3 style={{ marginBottom: '15px', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <CreditCard size={18} color="var(--color-success)" />
                   Your Payment Ledger
                 </h3>

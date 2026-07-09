@@ -39,8 +39,8 @@ export default function App() {
         alignItems: 'center',
         justifyContent: 'center',
         minHeight: '100vh',
-        background: '#0a0a0f',
-        color: '#fff'
+        background: '#fcfbf7',
+        color: '#111111'
       }}>
         <h2>Loading Pawara ServicePro...</h2>
       </div>

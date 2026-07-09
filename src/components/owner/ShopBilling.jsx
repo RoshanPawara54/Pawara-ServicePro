@@ -148,7 +148,8 @@ export default function ShopBilling({ initialMode = 'bill' }) {
         
         {/* Toggle create vs history */}
         <div style={{
-          background: 'rgba(255, 255, 255, 0.05)',
+          background: 'rgba(0, 0, 0, 0.04)',
+          border: '1px solid rgba(0, 0, 0, 0.08)',
           padding: '4px',
           borderRadius: '10px',
           display: 'flex',
@@ -159,8 +160,8 @@ export default function ShopBilling({ initialMode = 'bill' }) {
             style={{ 
               padding: '8px 16px', 
               borderRadius: '8px',
-              background: activeTab === 'create' ? 'rgba(139, 92, 246, 0.2)' : 'transparent',
-              color: activeTab === 'create' ? '#fff' : 'var(--text-muted)'
+              background: activeTab === 'create' ? '#4c1d95' : 'transparent',
+              color: activeTab === 'create' ? '#ffffff' : 'var(--text-muted)'
             }}
             onClick={() => { setActiveTab('create'); setActiveBillDetail(null); }}
           >
@@ -171,8 +172,8 @@ export default function ShopBilling({ initialMode = 'bill' }) {
             style={{ 
               padding: '8px 16px', 
               borderRadius: '8px',
-              background: activeTab === 'history' ? 'rgba(139, 92, 246, 0.2)' : 'transparent',
-              color: activeTab === 'history' ? '#fff' : 'var(--text-muted)'
+              background: activeTab === 'history' ? '#4c1d95' : 'transparent',
+              color: activeTab === 'history' ? '#ffffff' : 'var(--text-muted)'
             }}
             onClick={() => { setActiveTab('history'); setActiveBillDetail(null); }}
           >
@@ -244,7 +245,7 @@ export default function ShopBilling({ initialMode = 'bill' }) {
             </div>
 
             {/* Items table */}
-            <h3 style={{ marginBottom: '12px', fontSize: '1rem', color: '#fff' }}>Bill Items</h3>
+            <h3 style={{ marginBottom: '12px', fontSize: '1rem', color: 'var(--text-main)' }}>Bill Items</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
               {items.map((item, index) => (
                 <div key={index} style={{
@@ -344,7 +345,7 @@ export default function ShopBilling({ initialMode = 'bill' }) {
                   <span>Labour Charge:</span>
                   <span>₹{labourVal.toFixed(2)}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '8px', fontWeight: 'bold', fontSize: '1.2rem', color: '#fff' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(0, 0, 0, 0.08)', paddingTop: '8px', fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--text-main)' }}>
                   <span>Grand Total:</span>
                   <span>₹{grandTotal.toFixed(2)}</span>
                 </div>
@@ -557,12 +558,13 @@ export default function ShopBilling({ initialMode = 'bill' }) {
                     <tr key={b.id}>
                       <td>{new Date(b.createdAt).toLocaleDateString()}</td>
                       <td>
-                        <strong style={{ color: '#fff' }}>{b.billNumber}</strong>
+                        <strong style={{ color: 'var(--text-main)' }}>{b.billNumber}</strong>
                       </td>
                       <td>
                         <span className="badge" style={{
-                          background: b.billType === 'SHOP_QUOTATION' ? 'rgba(99,102,241,0.1)' : 'rgba(139,92,246,0.1)',
-                          color: b.billType === 'SHOP_QUOTATION' ? '#818cf8' : '#a78bfa'
+                          background: b.billType === 'SHOP_QUOTATION' ? 'rgba(99,102,241,0.08)' : 'rgba(139,92,246,0.08)',
+                          color: b.billType === 'SHOP_QUOTATION' ? '#4f46e5' : '#4c1d95',
+                          border: b.billType === 'SHOP_QUOTATION' ? '1px solid rgba(99,102,241,0.2)' : '1px solid rgba(139,92,246,0.2)'
                         }}>
                           {b.billType === 'SHOP_QUOTATION' ? 'QUOTATION' : 'BILL'}
                         </span>

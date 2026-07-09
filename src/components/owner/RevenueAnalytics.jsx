@@ -54,7 +54,7 @@ export default function RevenueAnalytics() {
             <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '500' }}>TOTAL REVENUE</span>
             <TrendingUp size={18} color="var(--color-primary)" />
           </div>
-          <div className="stat-val" style={{ color: '#fff' }}>
+          <div className="stat-val" style={{ color: 'var(--text-main)' }}>
             ₹{data?.totalRevenue.toFixed(2)}
           </div>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px' }}>
@@ -71,7 +71,7 @@ export default function RevenueAnalytics() {
             <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '500' }}>MATERIAL COST</span>
             <TrendingDown size={18} color="var(--color-danger)" />
           </div>
-          <div className="stat-val" style={{ color: '#fff' }}>
+          <div className="stat-val" style={{ color: 'var(--text-main)' }}>
             ₹{data?.totalMaterialCost.toFixed(2)}
           </div>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px' }}>
@@ -102,11 +102,11 @@ export default function RevenueAnalytics() {
         
         {/* Revenue Category Breakdown */}
         <div className="glass-card">
-          <h3 style={{ marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '10px' }}>
+          <h3 style={{ marginBottom: '20px', borderBottom: '1px solid rgba(0,0,0,0.08)', paddingBottom: '10px' }}>
             Revenue Sources
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(255,255,255,0.01)', borderRadius: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(0,0,0,0.02)', borderRadius: '8px' }}>
               <div>
                 <strong>Electrical Shop Sales</strong>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>Direct counter invoices</p>
@@ -114,7 +114,7 @@ export default function RevenueAnalytics() {
               <span style={{ fontSize: '1.1rem', fontWeight: '600' }}>₹{data?.totalShopRevenue.toFixed(2)}</span>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(255,255,255,0.01)', borderRadius: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(0,0,0,0.02)', borderRadius: '8px' }}>
               <div>
                 <strong>Maintenance Service Contracts</strong>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>Monthly recurring payments</p>
@@ -122,7 +122,7 @@ export default function RevenueAnalytics() {
               <span style={{ fontSize: '1.1rem', fontWeight: '600' }}>₹{data?.totalContractRevenue.toFixed(2)}</span>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(255,255,255,0.01)', borderRadius: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(0,0,0,0.02)', borderRadius: '8px' }}>
               <div>
                 <strong>Maintenance Material Bills</strong>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>Additional items not covered by contract</p>
@@ -134,7 +134,7 @@ export default function RevenueAnalytics() {
 
         {/* Monthly Breakdown Table */}
         <div className="glass-card">
-          <h3 style={{ marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '10px' }}>
+          <h3 style={{ marginBottom: '20px', borderBottom: '1px solid rgba(0,0,0,0.08)', paddingBottom: '10px' }}>
             Monthly Analytics
           </h3>
           <div className="data-table-container">
