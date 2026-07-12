@@ -140,7 +140,7 @@ export default function TrashManagement() {
                   <td colSpan="4" style={{ textAlign: 'center', padding: '30px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
                       <div className="spin-loader" style={{ width: '24px', height: '24px', borderWidth: '3px' }} />
-                      <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Loading trash bin...</span>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Loading...</span>
                     </div>
                   </td>
                 </tr>

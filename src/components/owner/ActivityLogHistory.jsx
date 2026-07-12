@@ -28,7 +28,7 @@ export default function ActivityLogHistory() {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '100px', gap: '15px' }}>
         <div className="spin-loader" />
-        <span style={{ color: 'var(--text-muted)', fontWeight: '500' }}>Loading activity logs...</span>
+        <span style={{ color: 'var(--text-muted)', fontWeight: '500' }}>Loading...</span>
       </div>
     );
   }

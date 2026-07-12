@@ -18,7 +18,7 @@ export default function ProtectedRoute({ role, children }) {
         gap: '20px'
       }}>
         <div className="spin-loader" />
-        <h2 style={{ fontSize: '1.25rem', fontWeight: '600' }}>Loading Pawara ServicePro...</h2>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: '600' }}>Loading...</h2>
       </div>
     );
   }
