@@ -269,7 +269,12 @@ export default function OwnerDashboard() {
   };
 
   if (loading) {
-    return <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}>Loading dashboard details...</div>;
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '100px', gap: '15px' }}>
+        <div className="spin-loader" />
+        <span style={{ color: 'var(--text-muted)', fontWeight: '500' }}>Loading dashboard details...</span>
+      </div>
+    );
   }
 
   return (

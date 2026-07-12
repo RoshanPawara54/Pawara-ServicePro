@@ -9,13 +9,16 @@ export default function ProtectedRoute({ role, children }) {
     return (
       <div style={{
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         minHeight: '100vh',
         background: '#fcfbf7',
-        color: '#111111'
+        color: '#111111',
+        gap: '20px'
       }}>
-        <h2>Loading Pawara ServicePro...</h2>
+        <div className="spin-loader" />
+        <h2 style={{ fontSize: '1.25rem', fontWeight: '600' }}>Loading Pawara ServicePro...</h2>
       </div>
     );
   }

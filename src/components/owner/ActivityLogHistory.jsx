@@ -25,7 +25,12 @@ export default function ActivityLogHistory() {
   }, []);
 
   if (loading) {
-    return <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}>Loading activity logs...</div>;
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '100px', gap: '15px' }}>
+        <div className="spin-loader" />
+        <span style={{ color: 'var(--text-muted)', fontWeight: '500' }}>Loading activity logs...</span>
+      </div>
+    );
   }
 
   return (

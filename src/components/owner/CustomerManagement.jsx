@@ -900,7 +900,16 @@ export default function CustomerManagement() {
                 </tr>
               </thead>
               <tbody>
-                {filteredCustomers.length > 0 ? (
+                {loading ? (
+                  <tr>
+                    <td colSpan="6" style={{ textAlign: 'center', padding: '40px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                        <div className="spin-loader" style={{ width: '24px', height: '24px', borderWidth: '3px' }} />
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Loading customers...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : filteredCustomers.length > 0 ? (
                   filteredCustomers.map((cust) => (
                     <tr key={cust.id}>
                       <td>
