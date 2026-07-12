@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import api from '../../services/api';
 import { 
   FileText, 
   Send, 
@@ -14,7 +15,7 @@ import {
 } from 'lucide-react';
 
 export default function CustomerPortal() {
-  const { user, apiFetch } = useAuth();
+  const { user } = useAuth();
 
   const [contract, setContract] = useState(null);
   const [requests, setRequests] = useState([]);
@@ -32,36 +33,50 @@ export default function CustomerPortal() {
   // Selected bill detail for view & print
   const [selectedBillDetail, setSelectedBillDetail] = useState(null);
 
+  // Custom confirmation popup states
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null
+  });
+
+  const showCustomConfirm = (title, message, onConfirm) => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
+  };
+
   const fetchCustomerData = async () => {
     try {
       // 1. Fetch Contract
-      const contractRes = await apiFetch(`http://localhost:8080/api/customer/contract`);
-      if (contractRes.ok) {
-        setContract(await contractRes.json());
-      } else {
+      try {
+        const contractRes = await api.get('/api/customer/contract');
+        setContract(contractRes.data);
+      } catch {
         setContract(null);
       }
 
       // 2. Fetch Requests
-      const reqsRes = await apiFetch(`http://localhost:8080/api/customer/requests`);
-      if (reqsRes.ok) {
-        setRequests(await reqsRes.json());
-      }
+      const reqsRes = await api.get('/api/customer/requests');
+      setRequests(reqsRes.data);
 
       // 3. Fetch Bills
-      const billsRes = await apiFetch(`http://localhost:8080/api/customer/bills`);
-      if (billsRes.ok) {
-        setBills(await billsRes.json());
-      }
+      const billsRes = await api.get('/api/customer/bills');
+      setBills(billsRes.data);
 
       // 4. Fetch Payments
-      const paymentsRes = await apiFetch(`http://localhost:8080/api/customer/payments`);
-      if (paymentsRes.ok) {
-        setPayments(await paymentsRes.json());
-      }
+      const paymentsRes = await api.get('/api/customer/payments');
+      setPayments(paymentsRes.data);
 
     } catch (err) {
-      setError(err.message || 'Error loading dashboard data');
+      setError(err.response?.data?.message || err.message || 'Error loading dashboard data');
     } finally {
       setLoading(false);
     }
@@ -76,12 +91,9 @@ export default function CustomerPortal() {
   }, []);
 
   const handleContractLookup = async () => {
-    // Helper to fetch contract details
     try {
-      const res = await apiFetch('http://localhost:8080/api/customer/contract');
-      if (res.ok) {
-        setContract(await res.json());
-      }
+      const res = await api.get('/api/customer/contract');
+      setContract(res.data);
     } catch(err) {}
   };
 
@@ -96,13 +108,7 @@ export default function CustomerPortal() {
     setSuccess('');
 
     try {
-      const res = await apiFetch('http://localhost:8080/api/customer/requests', {
-        method: 'POST',
-        body: JSON.stringify({ description })
-      });
-
-      if (!res.ok) throw new Error('Failed to submit maintenance request');
-      const data = await res.json();
+      await api.post('/api/customer/requests', { description });
 
       setSuccess('Maintenance request submitted successfully! The Owner has been notified in real-time.');
       setDescription('');
@@ -110,26 +116,26 @@ export default function CustomerPortal() {
       // Refresh list
       fetchCustomerData();
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
     }
   };
 
-  const handlePayBillCustomer = async (billId) => {
-    if (!window.confirm('Are you sure you want to mark this material invoice as paid?')) {
-      return;
-    }
-    setError('');
-    setSuccess('');
-    try {
-      const res = await apiFetch(`http://localhost:8080/api/customer/bills/${billId}/pay`, {
-        method: 'PUT'
-      });
-      if (!res.ok) throw new Error('Failed to record payment');
-      setSuccess('Invoice marked as paid successfully!');
-      fetchCustomerData();
-    } catch (err) {
-      setError(err.message);
-    }
+  const handlePayBillCustomer = (billId) => {
+    showCustomConfirm(
+      'Are you sure you want to mark this material invoice as paid?',
+      'This will submit the invoice to the admin for verification and approval.',
+      async () => {
+        setError('');
+        setSuccess('');
+        try {
+          await api.put(`/api/customer/bills/${billId}/pay`);
+          setSuccess('Invoice marked as paid successfully! Waiting for admin approval.');
+          fetchCustomerData();
+        } catch (err) {
+          setError(err.response?.data?.message || err.message);
+        }
+      }
+    );
   };
 
   const handlePrint = () => {
@@ -455,8 +461,8 @@ export default function CustomerPortal() {
                             <td><strong>{b.billNumber}</strong></td>
                             <td>₹{b.totalAmount.toFixed(2)}</td>
                             <td>
-                              <span className={`badge ${b.status === 'PAID' ? 'badge-completed' : 'badge-unpaid'}`}>
-                                {b.status}
+                              <span className={`badge ${b.status === 'PAID' ? 'badge-completed' : (b.status === 'PENDING_APPROVAL' ? 'badge-pending' : 'badge-unpaid')}`}>
+                                {b.status === 'PENDING_APPROVAL' ? 'PENDING APPROVAL' : b.status}
                               </span>
                             </td>
                             <td>
@@ -467,7 +473,7 @@ export default function CustomerPortal() {
                                 >
                                   View
                                 </button>
-                                {b.status !== 'PAID' && (
+                                {b.status === 'UNPAID' && (
                                   <button 
                                     className="btn-primary btn-small"
                                     onClick={() => handlePayBillCustomer(b.id)}
@@ -529,6 +535,46 @@ export default function CustomerPortal() {
                   </table>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {confirmModal.isOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.6)',
+          backdropFilter: 'blur(5px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 2000
+        }}>
+          <div className="glass-card" style={{ width: '100%', maxWidth: '400px', textAlign: 'center', border: '1px solid var(--card-hover-border)' }}>
+            <h3 style={{ marginBottom: '15px', color: 'var(--text-main)' }}>{confirmModal.title}</h3>
+            <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', marginBottom: '25px', lineHeight: '1.5' }}>
+              {confirmModal.message}
+            </p>
+            <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
+              <button 
+                type="button"
+                className="btn-secondary" 
+                onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                style={{ minWidth: '100px', justifyContent: 'center' }}
+              >
+                NO
+              </button>
+              <button 
+                type="button"
+                className="btn-primary" 
+                onClick={confirmModal.onConfirm}
+                style={{ minWidth: '100px', justifyContent: 'center', background: '#111111', borderColor: '#111111' }}
+              >
+                YES
+              </button>
             </div>
           </div>
         </div>

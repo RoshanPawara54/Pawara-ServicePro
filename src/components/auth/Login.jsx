@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { KeyRound, Mail, Lock, Sparkles, Loader } from 'lucide-react';
 
 export default function Login() {
-  const { login, forgotPassword } = useAuth();
+  const { user, login, forgotPassword } = useAuth();
+  const navigate = useNavigate();
   
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -26,9 +28,14 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
-      await login(username, password);
+      const userData = await login(username, password);
+      if (userData.role === 'OWNER') {
+        navigate('/dashboard', { replace: true });
+      } else if (userData.role === 'CUSTOMER') {
+        navigate('/portal', { replace: true });
+      }
     } catch (err) {
-      setError(err.message || 'Invalid credentials. Try again.');
+      setError(err.response?.data?.message || err.message || 'Invalid credentials. Try again.');
     } finally {
       setLoading(false);
     }
@@ -52,6 +59,11 @@ export default function Login() {
       setForgotLoading(false);
     }
   };
+
+  if (user) {
+    if (user.role === 'OWNER') return <Navigate to="/dashboard" replace />;
+    if (user.role === 'CUSTOMER') return <Navigate to="/portal" replace />;
+  }
 
   return (
     <div style={{

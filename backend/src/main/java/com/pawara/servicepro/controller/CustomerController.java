@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @RestController
@@ -21,11 +22,19 @@ public class CustomerController {
     private final ContractRepository contractRepository;
     private final UserRepository userRepository;
     private final PaymentRepository paymentRepository;
+    private final BillRepository billRepository;
+    private final MaintenanceRequestRepository requestRepository;
     private final PasswordEncoder passwordEncoder;
+    private final com.pawara.servicepro.service.ActivityLogService activityLogService;
 
     @GetMapping
     public List<Customer> getAllCustomers() {
-        return customerRepository.findAll();
+        return customerRepository.findNonTrashedCustomers();
+    }
+
+    @GetMapping("/trash")
+    public List<Customer> getTrashedCustomers() {
+        return customerRepository.findTrashedCustomers();
     }
 
     @GetMapping("/{id}")
@@ -44,6 +53,7 @@ public class CustomerController {
                 .phone(request.getPhone())
                 .email(request.getEmail())
                 .address(request.getAddress())
+                .status("ACTIVE")
                 .build();
         Customer savedCustomer = customerRepository.save(customer);
 
@@ -75,6 +85,9 @@ public class CustomerController {
                     .build();
             contractRepository.save(contract);
         }
+
+        // Log customer creation
+        activityLogService.logActivity("Maintenance Customer Added", "New Maintenance Customer added: " + savedCustomer.getName());
 
         Map<String, Object> response = new HashMap<>();
         response.put("customer", savedCustomer);
@@ -127,14 +140,112 @@ public class CustomerController {
         return ResponseEntity.ok(updatedCustomer);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteCustomer(@PathVariable Long id) {
-        if (!customerRepository.existsById(id)) {
+    // --- Customer Lifecycle Endpoints ---
+
+    @PutMapping("/{id}/deactivate")
+    public ResponseEntity<?> deactivateCustomer(@PathVariable Long id) {
+        Optional<Customer> customerOpt = customerRepository.findById(id);
+        if (customerOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        customerRepository.deleteById(id);
-        return ResponseEntity.ok().build();
+
+        Customer customer = customerOpt.get();
+        customer.setStatus("INACTIVE");
+        Customer updated = customerRepository.save(customer);
+
+        activityLogService.logActivity("Customer Deactivated", "Customer \"" + customer.getName() + "\" deactivated");
+        return ResponseEntity.ok(updated);
     }
+
+    @PutMapping("/{id}/reactivate")
+    public ResponseEntity<?> reactivateCustomer(@PathVariable Long id) {
+        Optional<Customer> customerOpt = customerRepository.findById(id);
+        if (customerOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Customer customer = customerOpt.get();
+        customer.setStatus("ACTIVE");
+        customer.setTrashedAt(null);
+        Customer updated = customerRepository.save(customer);
+
+        activityLogService.logActivity("Customer Reactivated", "Customer \"" + customer.getName() + "\" reactivated");
+        return ResponseEntity.ok(updated);
+    }
+
+    @PutMapping("/{id}/trash")
+    public ResponseEntity<?> trashCustomer(@PathVariable Long id) {
+        Optional<Customer> customerOpt = customerRepository.findById(id);
+        if (customerOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Customer customer = customerOpt.get();
+        customer.setStatus("TRASHED");
+        customer.setTrashedAt(LocalDateTime.now());
+        Customer updated = customerRepository.save(customer);
+
+        activityLogService.logActivity("Customer Trashed", "Customer \"" + customer.getName() + "\" moved to trash");
+        return ResponseEntity.ok(updated);
+    }
+
+    @PutMapping("/{id}/restore")
+    public ResponseEntity<?> restoreCustomer(@PathVariable Long id) {
+        Optional<Customer> customerOpt = customerRepository.findById(id);
+        if (customerOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Customer customer = customerOpt.get();
+        customer.setStatus("ACTIVE");
+        customer.setTrashedAt(null);
+        Customer updated = customerRepository.save(customer);
+
+        activityLogService.logActivity("Customer Restored", "Customer \"" + customer.getName() + "\" restored from trash");
+        return ResponseEntity.ok(updated);
+    }
+
+    // --- Permanent Delete (only from Trash) ---
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteCustomer(@PathVariable Long id) {
+        Optional<Customer> customerOpt = customerRepository.findById(id);
+        if (customerOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Customer customer = customerOpt.get();
+        String customerName = customer.getName();
+
+        // 1. Delete associated User login account
+        userRepository.findAll().stream()
+                .filter(u -> u.getCustomer() != null && id.equals(u.getCustomer().getId()))
+                .forEach(userRepository::delete);
+
+        // 2. Delete associated Payments
+        List<Payment> payments = paymentRepository.findByCustomerIdOrderByPaymentDateDesc(id);
+        paymentRepository.deleteAll(payments);
+
+        // 3. Delete associated Bills (and their items via cascade)
+        List<Bill> bills = billRepository.findByCustomerIdOrderByCreatedAtDesc(id);
+        billRepository.deleteAll(bills);
+
+        // 4. Delete associated Maintenance Requests
+        List<MaintenanceRequest> requests = requestRepository.findByCustomerIdOrderByCreatedAtDesc(id);
+        requestRepository.deleteAll(requests);
+
+        // 5. Delete associated Contract
+        contractRepository.findByCustomerId(id).ifPresent(contractRepository::delete);
+
+        // 6. Delete the Customer
+        customerRepository.delete(customer);
+
+        activityLogService.logActivity("Customer Permanently Deleted", "Customer \"" + customerName + "\" permanently deleted");
+
+        return ResponseEntity.ok(Map.of("message", "Customer permanently deleted"));
+    }
+
+    // --- Existing endpoints ---
 
     @GetMapping("/{id}/contract")
     public ResponseEntity<Contract> getCustomerContract(@PathVariable Long id) {

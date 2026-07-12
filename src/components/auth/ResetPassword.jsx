@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Lock, Check, AlertTriangle, Loader } from 'lucide-react';
 
-export default function ResetPassword({ onBackToLogin }) {
+export default function ResetPassword() {
   const { resetPassword } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   
   const [token, setToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -14,13 +17,13 @@ export default function ResetPassword({ onBackToLogin }) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const queryToken = new URLSearchParams(window.location.search).get('token');
+    const queryToken = searchParams.get('token');
     if (queryToken) {
       setToken(queryToken);
     } else {
       setError('Password reset token is missing or invalid.');
     }
-  }, []);
+  }, [searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,7 +47,7 @@ export default function ResetPassword({ onBackToLogin }) {
       await resetPassword(token, newPassword);
       setSuccess('Your password has been successfully reset! You can now sign in.');
     } catch (err) {
-      setError(err.message || 'Failed to reset password. The token may be expired.');
+      setError(err.response?.data?.message || err.message || 'Failed to reset password. The token may be expired.');
     } finally {
       setLoading(false);
     }
@@ -115,11 +118,9 @@ export default function ResetPassword({ onBackToLogin }) {
               <strong>Success!</strong>
             </div>
             {success}
-            <button
+             <button
               onClick={() => {
-                // Clear URL parameters and trigger back to login
-                window.history.pushState({}, document.title, window.location.pathname);
-                onBackToLogin();
+                navigate('/login', { replace: true });
               }}
               className="btn-primary btn-small"
               style={{ width: '100%', marginTop: '15px', justifyContent: 'center' }}
@@ -169,8 +170,7 @@ export default function ResetPassword({ onBackToLogin }) {
             <button
               type="button"
               onClick={() => {
-                window.history.pushState({}, document.title, window.location.pathname);
-                onBackToLogin();
+                navigate('/login', { replace: true });
               }}
               style={{
                 background: 'none',

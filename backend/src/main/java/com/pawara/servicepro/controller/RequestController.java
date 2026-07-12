@@ -19,6 +19,7 @@ public class RequestController {
     private final CustomerRepository customerRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final com.pawara.servicepro.service.ActivityLogService activityLogService;
 
     // --- Customer APIs ---
 
@@ -47,6 +48,11 @@ public class RequestController {
         }
 
         Customer customer = userOpt.get().getCustomer();
+
+        // Reject requests from inactive or trashed customers
+        if (!"ACTIVE".equals(customer.getStatus())) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Your account is currently inactive. Please contact the service provider."));
+        }
 
         MaintenanceRequest request = MaintenanceRequest.builder()
                 .customer(customer)
@@ -89,8 +95,14 @@ public class RequestController {
         }
 
         MaintenanceRequest request = requestOpt.get();
+        String oldStatus = request.getStatus();
         request.setStatus(newStatus);
         MaintenanceRequest updatedRequest = requestRepository.save(request);
+
+        // Log completion if state transitioned to COMPLETED
+        if ("COMPLETED".equals(newStatus) && !"COMPLETED".equals(oldStatus)) {
+            activityLogService.logActivity("Maintenance Request Completed", "Maintenance Request #" + id + " completed");
+        }
 
         return ResponseEntity.ok(updatedRequest);
     }

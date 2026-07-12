@@ -304,7 +304,8 @@ h1, h2, h3, h4, h5, h6 {
 /* Navigation layout */
 .layout-container {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .sidebar {
@@ -420,3 +421,82 @@ h1, h2, h3, h4, h5, h6 {
     border-bottom: 1px solid #ddd !important;
   }
 }
+
+/* Mobile Screen Responsiveness */
+@media (max-width: 768px) {
+  .layout-container {
+    flex-direction: column !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  
+  .sidebar {
+    width: 100% !important;
+    height: auto !important;
+    padding: 20px !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--card-border) !important;
+    box-sizing: border-box !important;
+  }
+  
+  .logo-container {
+    margin-bottom: 20px !important;
+    justify-content: center !important;
+  }
+  
+  .nav-links {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 8px !important;
+  }
+  
+  .nav-link {
+    padding: 8px 12px !important;
+    font-size: 0.85rem !important;
+  }
+  
+  .user-profile-section {
+    margin-top: 20px !important;
+    padding-top: 15px !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+  
+  .user-profile-section .user-info {
+    text-align: left !important;
+  }
+  
+  .user-profile-section button {
+    width: auto !important;
+    padding: 8px 16px !important;
+  }
+  
+  .main-content {
+    padding: 20px !important;
+    overflow-y: visible !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+  }
+
+  /* Automatically collapse all inline and class-based grids on mobile */
+  div[style*="grid-template-columns"],
+  div[style*="gridTemplateColumns"],
+  .stat-grid {
+    grid-template-columns: 1fr !important;
+    gap: 15px !important;
+  }
+
+  /* Make forms and inputs full width */
+  .form-group {
+    width: 100% !important;
+  }
+
+  /* Adjust alignment and padding for dialog/confirm popups on mobile */
+  .glass-card {
+    padding: 20px !important;
+  }
+}
+

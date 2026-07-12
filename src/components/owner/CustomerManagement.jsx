@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useParams, useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 import { 
   Search, 
   UserPlus, 
@@ -16,7 +17,8 @@ import {
 } from 'lucide-react';
 
 export default function CustomerManagement() {
-  const { apiFetch } = useAuth();
+  const { id } = useParams();
+  const navigate = useNavigate();
 
   // List states
   const [customers, setCustomers] = useState([]);
@@ -34,6 +36,7 @@ export default function CustomerManagement() {
 
   // Search & Filters
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL', 'ACTIVE', 'INACTIVE'
 
   // Form states
   const [showAddForm, setShowAddForm] = useState(false);
@@ -72,14 +75,32 @@ export default function CustomerManagement() {
     { itemName: '', quantity: '1', unitPrice: '0', unitCost: '0' }
   ]);
 
+  // Custom confirmation popup states
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null
+  });
+
+  const showCustomConfirm = (title, message, onConfirm) => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
+  };
+
   const fetchCustomers = async () => {
     try {
-      const res = await apiFetch('http://localhost:8080/api/owner/customers');
-      if (!res.ok) throw new Error('Failed to load customers list');
-      const data = await res.json();
-      setCustomers(data);
+      const res = await api.get('/api/owner/customers');
+      setCustomers(res.data);
     } catch (err) {
-      setError(err.message || 'Error occurred');
+      setError(err.response?.data?.message || err.message || 'Error occurred');
     } finally {
       setLoading(false);
     }
@@ -89,58 +110,53 @@ export default function CustomerManagement() {
     fetchCustomers();
   }, []);
 
+  useEffect(() => {
+    if (id) {
+      handleSelectCustomer(parseInt(id));
+    } else {
+      setSelectedCustomerId(null);
+    }
+  }, [id]);
+
   const handleSelectCustomer = async (id) => {
     setSelectedCustomerId(id);
     try {
       // 1. Fetch profile details
-      const profileRes = await apiFetch(`http://localhost:8080/api/owner/customers/${id}`);
-      if (!profileRes.ok) throw new Error('Failed to load customer profile details');
-      const profileData = await profileRes.json();
-      setProfile(profileData);
+      const profileRes = await api.get(`/api/owner/customers/${id}`);
+      setProfile(profileRes.data);
 
       // 2. Fetch contract details
-      const contractRes = await apiFetch(`http://localhost:8080/api/owner/customers/${id}/contract`);
-      if (contractRes.ok) {
-        const contractData = await contractRes.json();
-        setContract(contractData);
-        setPaymentAmount(contractData.monthlyPaymentAmount.toString());
-      } else {
+      try {
+        const contractRes = await api.get(`/api/owner/customers/${id}/contract`);
+        setContract(contractRes.data);
+        setPaymentAmount(contractRes.data.monthlyPaymentAmount.toString());
+      } catch {
         setContract(null);
         setPaymentAmount('0');
       }
 
       // 3. Fetch credentials (username)
-      const credsRes = await apiFetch(`http://localhost:8080/api/owner/customers/${id}/credentials`);
-      if (credsRes.ok) {
-        setCredentials(await credsRes.json());
-      } else {
+      try {
+        const credsRes = await api.get(`/api/owner/customers/${id}/credentials`);
+        setCredentials(credsRes.data);
+      } catch {
         setCredentials(null);
       }
 
       // 4. Fetch requests
-      const reqsRes = await apiFetch(`http://localhost:8080/api/owner/requests`);
-      if (reqsRes.ok) {
-        const reqsData = await reqsRes.json();
-        // filter by customerId
-        setRequests(reqsData.filter(r => r.customer?.id === id));
-      }
+      const reqsRes = await api.get('/api/owner/requests');
+      setRequests(reqsRes.data.filter(r => r.customer?.id === id));
 
       // 5. Fetch bills
-      const billsRes = await apiFetch(`http://localhost:8080/api/owner/bills`);
-      if (billsRes.ok) {
-        const billsData = await billsRes.json();
-        // filter by customerId
-        setBills(billsData.filter(b => b.customer?.id === id));
-      }
+      const billsRes = await api.get('/api/owner/bills');
+      setBills(billsRes.data.filter(b => b.customer?.id === id));
 
       // 6. Fetch payments
-      const paymentsRes = await apiFetch(`http://localhost:8080/api/owner/customers/${id}/payments`);
-      if (paymentsRes.ok) {
-        setPayments(await paymentsRes.json());
-      }
+      const paymentsRes = await api.get(`/api/owner/customers/${id}/payments`);
+      setPayments(paymentsRes.data);
 
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
     }
   };
 
@@ -170,14 +186,9 @@ export default function CustomerManagement() {
     };
 
     try {
-      const res = await apiFetch('http://localhost:8080/api/owner/customers', {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) throw new Error('Failed to create customer');
-      const data = await res.json();
+      const res = await api.post('/api/owner/customers', payload);
       
-      setSuccess(`Customer created successfully! Generated username: "${data.generatedUsername}" (Password: "123")`);
+      setSuccess(`Customer created successfully! Generated username: "${res.data.generatedUsername}" (Password: "123")`);
       setShowAddForm(false);
       
       // Reset fields
@@ -189,42 +200,33 @@ export default function CustomerManagement() {
       
       fetchCustomers();
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
     }
   };
 
   const handleResetPasswordSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await apiFetch(`http://localhost:8080/api/owner/customers/${selectedCustomerId}/reset-password`, {
-        method: 'POST',
-        body: JSON.stringify({ password: resetPasswordVal })
-      });
-      if (!res.ok) throw new Error('Failed to reset password');
+      await api.post(`/api/owner/customers/${selectedCustomerId}/reset-password`, { password: resetPasswordVal });
       
       setSuccess(`Password updated successfully to "${resetPasswordVal}"`);
       setShowResetModal(false);
       setResetPasswordVal('123');
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
     }
   };
 
   const handleRecordPayment = async (e) => {
     e.preventDefault();
     try {
-      const res = await apiFetch(`http://localhost:8080/api/owner/customers/${selectedCustomerId}/payments`, {
-        method: 'POST',
-        body: JSON.stringify({
-          paymentType,
-          amount: parseFloat(paymentAmount) || 0,
-          paymentDate,
-          referenceId: paymentReferenceId ? parseInt(paymentReferenceId) : null,
-          notes: paymentNotes
-        })
+      await api.post(`/api/owner/customers/${selectedCustomerId}/payments`, {
+        paymentType,
+        amount: parseFloat(paymentAmount) || 0,
+        paymentDate,
+        referenceId: paymentReferenceId ? parseInt(paymentReferenceId) : null,
+        notes: paymentNotes
       });
-
-      if (!res.ok) throw new Error('Failed to log payment');
       
       setSuccess('Payment logged successfully!');
       setShowPaymentModal(false);
@@ -236,22 +238,18 @@ export default function CustomerManagement() {
       // Refresh view
       handleSelectCustomer(selectedCustomerId);
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
     }
   };
 
   const handleCompleteRequestDirect = async (reqId) => {
     try {
-      const res = await apiFetch(`http://localhost:8080/api/owner/requests/${reqId}/status`, {
-        method: 'PUT',
-        body: JSON.stringify({ status: 'COMPLETED' })
-      });
-      if (!res.ok) throw new Error('Failed to update request status');
+      await api.put(`/api/owner/requests/${reqId}/status`, { status: 'COMPLETED' });
       
       setSuccess('Request marked as completed successfully!');
       handleSelectCustomer(selectedCustomerId);
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
     }
   };
 
@@ -263,67 +261,71 @@ export default function CustomerManagement() {
     }
 
     try {
-      const res = await apiFetch('http://localhost:8080/api/owner/bills', {
-        method: 'POST',
-        body: JSON.stringify({
-          billType: 'MAINTENANCE_MATERIAL_BILL',
-          customerId: selectedCustomerId,
-          maintenanceRequestId: selectedRequestForBill.id,
-          labourCharge: parseFloat(labourCharge) || 0,
-          status: 'UNPAID', // Customer views and pays later
-          items: billItems.map(item => ({
-            itemName: item.itemName,
-            quantity: parseFloat(item.quantity) || 0,
-            unitPrice: parseFloat(item.unitPrice) || 0,
-            unitCost: parseFloat(item.unitCost) || 0
-          }))
-        })
+      const res = await api.post('/api/owner/bills', {
+        billType: 'MAINTENANCE_MATERIAL_BILL',
+        customerId: selectedCustomerId,
+        maintenanceRequestId: selectedRequestForBill.id,
+        labourCharge: parseFloat(labourCharge) || 0,
+        status: 'UNPAID',
+        items: billItems.map(item => ({
+          itemName: item.itemName,
+          quantity: parseFloat(item.quantity) || 0,
+          unitPrice: parseFloat(item.unitPrice) || 0,
+          unitCost: parseFloat(item.unitCost) || 0
+        }))
       });
-
-      if (!res.ok) throw new Error('Failed to generate material bill');
-      const generatedBill = await res.json();
       
-      setSuccess(`Material Bill generated successfully: ${generatedBill.billNumber}. Request marked as completed.`);
+      setSuccess(`Material Bill generated successfully: ${res.data.billNumber}. Request marked as completed.`);
       setShowMaterialBillModal(false);
       setSelectedRequestForBill(null);
       setBillItems([{ itemName: '', quantity: '1', unitPrice: '0', unitCost: '0' }]);
       
       handleSelectCustomer(selectedCustomerId);
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
     }
   };
 
   const handleMarkBillAsPaid = async (billId) => {
-    if (!window.confirm('Are you sure you want to mark this material invoice as paid?')) {
-      return;
-    }
     try {
-      const res = await apiFetch(`http://localhost:8080/api/owner/bills/${billId}/pay`, {
-        method: 'PUT'
-      });
-      if (!res.ok) throw new Error('Failed to mark invoice as paid');
+      await api.put(`/api/owner/bills/${billId}/pay`);
       setSuccess('Invoice marked as paid successfully!');
       handleSelectCustomer(selectedCustomerId);
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
     }
   };
 
-  const handleDeleteBill = async (billId) => {
-    if (!window.confirm('Are you sure you want to delete this invoice? This will reset the associated maintenance request status to PENDING.')) {
-      return;
-    }
-    try {
-      const res = await apiFetch(`http://localhost:8080/api/owner/bills/${billId}`, {
-        method: 'DELETE'
-      });
-      if (!res.ok) throw new Error('Failed to delete invoice');
-      setSuccess('Invoice deleted successfully!');
-      handleSelectCustomer(selectedCustomerId);
-    } catch (err) {
-      setError(err.message);
-    }
+  const handleDeleteBill = (billId) => {
+    showCustomConfirm(
+      'Are you sure you want to delete this bill?',
+      'Deleting this invoice will remove the financial record, and the associated maintenance request status will be reset back to PENDING.',
+      async () => {
+        try {
+          await api.delete(`/api/owner/bills/${billId}`);
+          setSuccess('Invoice deleted successfully!');
+          handleSelectCustomer(selectedCustomerId);
+        } catch (err) {
+          setError(err.response?.data?.message || err.message);
+        }
+      }
+    );
+  };
+
+  const handleMarkBillAsPending = (billId) => {
+    showCustomConfirm(
+      'Are you sure you want to change this bill to pending?',
+      'This will revert the status of the invoice from Paid back to Pending, reactivating the payment button for the client.',
+      async () => {
+        try {
+          await api.put(`/api/owner/bills/${billId}/unpay`);
+          setSuccess('Invoice reverted back to pending successfully!');
+          handleSelectCustomer(selectedCustomerId);
+        } catch (err) {
+          setError(err.response?.data?.message || err.message);
+        }
+      }
+    );
   };
 
   const handleItemChange = (index, field, value) => {
@@ -332,10 +334,69 @@ export default function CustomerManagement() {
     setBillItems(updated);
   };
 
-  const filteredCustomers = customers.filter(c => 
-    c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.contactPerson?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleDeactivateCustomer = (customerId) => {
+    showCustomConfirm(
+      'Deactivate Customer?',
+      'The customer will become inactive. Inactive customers:\n\n- Cannot receive new quotations.\n- Cannot receive new bills.\n- Cannot create new maintenance requests.\n- Existing history will remain available.\n- The customer can be reactivated at any time.',
+      async () => {
+        try {
+          await api.put(`/api/owner/customers/${customerId}/deactivate`);
+          setSuccess('Customer deactivated successfully!');
+          handleSelectCustomer(customerId);
+          fetchCustomers();
+        } catch (err) {
+          setError(err.response?.data?.message || err.message);
+        }
+      }
+    );
+  };
+
+  const handleReactivateCustomer = (customerId) => {
+    showCustomConfirm(
+      'Reactivate Customer?',
+      'Reactivate this customer?',
+      async () => {
+        try {
+          await api.put(`/api/owner/customers/${customerId}/reactivate`);
+          setSuccess('Customer reactivated successfully!');
+          handleSelectCustomer(customerId);
+          fetchCustomers();
+        } catch (err) {
+          setError(err.response?.data?.message || err.message);
+        }
+      }
+    );
+  };
+
+  const handleMoveCustomerToTrash = (customerId) => {
+    showCustomConfirm(
+      'Move Customer To Trash?',
+      'Moving this customer to Trash will:\n\n- Hide the customer from the active customer list.\n- Prevent new quotations.\n- Prevent new bills.\n- Prevent maintenance requests.\n- Preserve all customer history.\n- Preserve contracts.\n- Preserve quotations.\n- Preserve bills.\n- Preserve maintenance requests.\n- Preserve material bills.\n- Preserve activity history.',
+      async () => {
+        try {
+          await api.put(`/api/owner/customers/${customerId}/trash`);
+          setSuccess('Customer moved to Trash successfully!');
+          navigate('/maintenance');
+          fetchCustomers();
+        } catch (err) {
+          setError(err.response?.data?.message || err.message);
+        }
+      }
+    );
+  };
+
+  const filteredCustomers = customers.filter(c => {
+    const status = c.status || 'ACTIVE';
+    if (statusFilter === 'ACTIVE' && status !== 'ACTIVE') return false;
+    if (statusFilter === 'INACTIVE' && status !== 'INACTIVE') return false;
+    if (statusFilter === 'ALL' && status === 'TRASHED') return false;
+
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      c.name.toLowerCase().includes(searchLower) ||
+      (c.contactPerson && c.contactPerson.toLowerCase().includes(searchLower))
+    );
+  });
 
   return (
     <div>
@@ -350,7 +411,7 @@ export default function CustomerManagement() {
           </button>
         )}
         {selectedCustomerId && (
-          <button className="btn-secondary" onClick={() => setSelectedCustomerId(null)}>
+          <button className="btn-secondary" onClick={() => navigate('/maintenance')}>
             ← Back to Directory
           </button>
         )}
@@ -503,6 +564,37 @@ export default function CustomerManagement() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', alignItems: 'start' }}>
             {/* Contract Info & Payments logs */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+              {/* Customer Status Card */}
+              <div className="glass-card">
+                <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', borderBottom: '1px solid rgba(0,0,0,0.08)', paddingBottom: '10px' }}>
+                  Customer Status
+                </h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Status: </span>
+                    <span className={`badge ${(profile.status || 'ACTIVE') === 'INACTIVE' ? 'badge-unpaid' : 'badge-completed'}`} style={{ fontSize: '0.9rem', marginLeft: '6px' }}>
+                      {profile.status || 'ACTIVE'}
+                    </span>
+                  </div>
+                  {(profile.status || 'ACTIVE') === 'INACTIVE' ? (
+                    <button 
+                      className="btn-primary btn-small"
+                      onClick={() => handleReactivateCustomer(profile.id)}
+                    >
+                      Reactivate Customer
+                    </button>
+                  ) : (
+                    <button 
+                      className="btn-danger btn-small"
+                      onClick={() => handleDeactivateCustomer(profile.id)}
+                      style={{ background: '#ef4444', borderColor: '#ef4444', color: '#fff' }}
+                    >
+                      Deactivate Customer
+                    </button>
+                  )}
+                </div>
+              </div>
+
               {/* Contract Card */}
               <div className="glass-card">
                 <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', borderBottom: '1px solid rgba(0,0,0,0.08)', paddingBottom: '10px' }}>
@@ -664,8 +756,8 @@ export default function CustomerManagement() {
                         <td>₹{b.labourCharge.toFixed(2)}</td>
                         <td>₹{b.materialCost.toFixed(2)}</td>
                         <td>
-                          <span className={`badge ${b.status === 'PAID' ? 'badge-completed' : 'badge-unpaid'}`}>
-                            {b.status}
+                          <span className={`badge ${b.status === 'PAID' ? 'badge-completed' : (b.status === 'PENDING_APPROVAL' ? 'badge-pending' : 'badge-unpaid')}`}>
+                            {b.status === 'PENDING_APPROVAL' ? 'PENDING APPROVAL' : b.status}
                           </span>
                         </td>
                         <td className="actions-cell">
@@ -674,10 +766,28 @@ export default function CustomerManagement() {
                               <button 
                                 className="btn-secondary btn-small"
                                 onClick={() => handleMarkBillAsPaid(b.id)}
-                                title="Mark as Paid"
-                                style={{ padding: '6px 10px', color: '#047857', borderColor: 'rgba(5, 150, 105, 0.2)', background: 'rgba(5, 150, 105, 0.05)' }}
+                                title={b.status === 'UNPAID' ? 'Locked - waiting for client payment confirmation' : 'Mark as Paid'}
+                                disabled={b.status === 'UNPAID'}
+                                style={{ 
+                                  padding: '6px 10px', 
+                                  color: b.status === 'UNPAID' ? '#999999' : '#047857', 
+                                  borderColor: b.status === 'UNPAID' ? 'rgba(0,0,0,0.1)' : 'rgba(5, 150, 105, 0.2)', 
+                                  background: b.status === 'UNPAID' ? 'rgba(0,0,0,0.02)' : 'rgba(5, 150, 105, 0.05)',
+                                  cursor: b.status === 'UNPAID' ? 'not-allowed' : 'pointer',
+                                  opacity: b.status === 'UNPAID' ? 0.6 : 1
+                                }}
                               >
-                                ✓ Paid
+                                {b.status === 'UNPAID' ? '🔒 Paid' : '✓ Approve Paid'}
+                              </button>
+                            )}
+                            {b.status === 'PAID' && (
+                              <button 
+                                className="btn-secondary btn-small"
+                                onClick={() => handleMarkBillAsPending(b.id)}
+                                title="Change back to Pending"
+                                style={{ padding: '6px 10px', color: 'var(--color-warning)', borderColor: 'rgba(217, 119, 6, 0.2)', background: 'rgba(217, 119, 6, 0.05)' }}
+                              >
+                                🕒 Pending
                               </button>
                             )}
                             <button 
@@ -703,14 +813,68 @@ export default function CustomerManagement() {
               </table>
             </div>
           </div>
+
+          {/* Delete Customer Section */}
+          <div className="glass-card" style={{ border: '1px solid #fecaca', background: 'rgba(254, 226, 226, 0.15)', marginTop: '30px' }}>
+            <h3 style={{ color: '#dc2626', marginBottom: '15px', borderBottom: '1px solid #fee2e2', paddingBottom: '10px' }}>
+              Delete Customer
+            </h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+              <div>
+                <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-main)' }}>Move Customer to Trash</h4>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  Hides the customer from the directory and halts new bills/requests. Customer history will be preserved.
+                </p>
+              </div>
+              <button 
+                type="button"
+                className="btn-danger" 
+                onClick={() => handleMoveCustomerToTrash(profile.id)}
+                style={{ background: '#dc2626', borderColor: '#dc2626', color: '#fff' }}
+              >
+                Move To Trash
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
       {/* 3. Customer Directory / Grid */}
       {!selectedCustomerId && !showAddForm && (
         <div className="glass-card">
-          <div style={{ display: 'flex', gap: '15px', marginBottom: '20px' }}>
-            <div style={{ position: 'relative', flex: 1 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
+            {/* Filter Tabs */}
+            <div style={{
+              background: 'rgba(0, 0, 0, 0.04)',
+              border: '1px solid rgba(0, 0, 0, 0.08)',
+              padding: '4px',
+              borderRadius: '10px',
+              display: 'flex',
+              gap: '4px'
+            }}>
+              {['ALL', 'ACTIVE', 'INACTIVE'].map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    background: statusFilter === f ? '#4c1d95' : 'transparent',
+                    color: statusFilter === f ? '#ffffff' : 'var(--text-muted)',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    fontWeight: '500'
+                  }}
+                  onClick={() => setStatusFilter(f)}
+                >
+                  {f === 'ALL' ? 'All' : f === 'ACTIVE' ? 'Active' : 'Inactive'}
+                </button>
+              ))}
+            </div>
+
+            {/* Search Input */}
+            <div style={{ position: 'relative', minWidth: '300px', flex: 1 }}>
               <Search size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
               <input 
                 className="form-input" 
@@ -743,13 +907,18 @@ export default function CustomerManagement() {
                         <strong style={{ color: 'var(--text-main)' }}>{cust.name}</strong>
                       </td>
                       <td>
-                        <span className="badge badge-quotation">{cust.customerType}</span>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <span className="badge badge-quotation">{cust.customerType}</span>
+                          <span className={`badge ${(cust.status || 'ACTIVE') === 'INACTIVE' ? 'badge-unpaid' : 'badge-completed'}`}>
+                            {cust.status || 'ACTIVE'}
+                          </span>
+                        </div>
                       </td>
                       <td>{cust.contactPerson || '-'}</td>
                       <td>{cust.phone || '-'}</td>
                       <td>{cust.email || '-'}</td>
                       <td className="actions-cell">
-                        <button className="btn-primary btn-small" onClick={() => handleSelectCustomer(cust.id)}>
+                        <button className="btn-primary btn-small" onClick={() => navigate('/maintenance/' + cust.id)}>
                           Open Profile
                         </button>
                       </td>
@@ -877,6 +1046,46 @@ export default function CustomerManagement() {
                 <button type="submit" className="btn-primary">Generate Invoice</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {confirmModal.isOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.6)',
+          backdropFilter: 'blur(5px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 2000
+        }}>
+          <div className="glass-card" style={{ width: '100%', maxWidth: '400px', textAlign: 'center', border: '1px solid var(--card-hover-border)' }}>
+            <h3 style={{ marginBottom: '15px', color: 'var(--text-main)' }}>{confirmModal.title}</h3>
+            <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', marginBottom: '25px', lineHeight: '1.5' }}>
+              {confirmModal.message}
+            </p>
+            <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
+              <button 
+                type="button"
+                className="btn-secondary" 
+                onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                style={{ minWidth: '100px', justifyContent: 'center' }}
+              >
+                NO
+              </button>
+              <button 
+                type="button"
+                className="btn-primary" 
+                onClick={confirmModal.onConfirm}
+                style={{ minWidth: '100px', justifyContent: 'center', background: '#111111', borderColor: '#111111' }}
+              >
+                YES
+              </button>
+            </div>
           </div>
         </div>
       )}

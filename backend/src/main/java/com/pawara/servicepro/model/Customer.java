@@ -28,11 +28,25 @@ public class Customer {
     private String email;
     private String address;
 
+    @Builder.Default
+    private String status = "ACTIVE"; // ACTIVE, INACTIVE, TRASHED
+
+    @Column(name = "trashed_at")
+    private LocalDateTime trashedAt;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        if (status == null) {
+            status = "ACTIVE";
+        }
+    }
+
+    // Safe getter for old rows that may have null status
+    public String getStatus() {
+        return status != null ? status : "ACTIVE";
     }
 }

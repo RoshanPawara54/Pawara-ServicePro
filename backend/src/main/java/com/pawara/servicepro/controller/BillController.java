@@ -21,6 +21,7 @@ public class BillController {
     private final MaintenanceRequestRepository requestRepository;
     private final UserRepository userRepository;
     private final PaymentRepository paymentRepository;
+    private final com.pawara.servicepro.service.ActivityLogService activityLogService;
 
     // --- Owner APIs ---
 
@@ -51,6 +52,9 @@ public class BillController {
         Customer customer = null;
         if (request.getCustomerId() != null) {
             customer = customerRepository.findById(request.getCustomerId()).orElse(null);
+            if (customer != null && !"ACTIVE".equals(customer.getStatus())) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Cannot create bills for inactive or trashed customers."));
+            }
         }
 
         MaintenanceRequest maintenanceRequest = null;
@@ -105,6 +109,9 @@ public class BillController {
         if (maintenanceRequest != null && "MAINTENANCE_MATERIAL_BILL".equals(request.getBillType())) {
             maintenanceRequest.setStatus("COMPLETED");
             requestRepository.save(maintenanceRequest);
+            
+            // Also log request completion
+            activityLogService.logActivity("Maintenance Request Completed", "Maintenance Request #" + maintenanceRequest.getId() + " completed");
         }
 
         if ("PAID".equals(savedBill.getStatus()) && customer != null) {
@@ -118,6 +125,15 @@ public class BillController {
                     .notes("Payment recorded during invoice creation: " + savedBill.getBillNumber())
                     .build();
             paymentRepository.save(payment);
+        }
+
+        // Log bill creation
+        if ("SHOP_BILL".equals(savedBill.getBillType())) {
+            activityLogService.logActivity("Bill Created", "Bill #" + savedBill.getBillNumber() + " created");
+        } else if ("SHOP_QUOTATION".equals(savedBill.getBillType())) {
+            activityLogService.logActivity("Quotation Created", "Quotation #" + savedBill.getBillNumber() + " created");
+        } else if ("MAINTENANCE_MATERIAL_BILL".equals(savedBill.getBillType())) {
+            activityLogService.logActivity("Material Bill Generated", "Material Bill #" + savedBill.getBillNumber() + " generated");
         }
 
         return ResponseEntity.ok(savedBill);
@@ -140,6 +156,10 @@ public class BillController {
         bill.setBillNumber("BIL-" + bill.getBillNumber().split("-")[1]);
         
         Bill updatedBill = billRepository.save(bill);
+        
+        // Log conversion
+        activityLogService.logActivity("Quotation Converted", "Quotation converted to Bill #" + updatedBill.getBillNumber());
+        
         return ResponseEntity.ok(updatedBill);
     }
 
@@ -165,6 +185,36 @@ public class BillController {
                     .build();
             paymentRepository.save(payment);
         }
+
+        // Log activity
+        activityLogService.logActivity("Bill Paid", "Bill #" + bill.getBillNumber() + " marked as PAID");
+
+        return ResponseEntity.ok(updatedBill);
+    }
+
+    @PutMapping("/api/owner/bills/{id}/unpay")
+    public ResponseEntity<?> markBillAsPending(@PathVariable Long id) {
+        Optional<Bill> billOpt = billRepository.findById(id);
+        if (billOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Bill bill = billOpt.get();
+        bill.setStatus("UNPAID");
+        Bill updatedBill = billRepository.save(bill);
+
+        // Delete associated payments if any
+        if (bill.getCustomer() != null) {
+            List<Payment> associatedPayments = paymentRepository.findByCustomerIdOrderByPaymentDateDesc(bill.getCustomer().getId());
+            for (Payment p : associatedPayments) {
+                if (Objects.equals(p.getReferenceId(), bill.getId()) && "MATERIAL_BILL_PAYMENT".equals(p.getPaymentType())) {
+                    paymentRepository.delete(p);
+                }
+            }
+        }
+
+        // Log activity
+        activityLogService.logActivity("Bill Marked Pending", "Bill #" + bill.getBillNumber() + " marked back to pending");
 
         return ResponseEntity.ok(updatedBill);
     }
@@ -215,18 +265,8 @@ public class BillController {
             return ResponseEntity.status(403).body(Map.of("message", "Unauthorized to pay this bill"));
         }
 
-        bill.setStatus("PAID");
+        bill.setStatus("PENDING_APPROVAL");
         Bill updatedBill = billRepository.save(bill);
-
-        Payment payment = Payment.builder()
-                .customer(bill.getCustomer())
-                .paymentType("MATERIAL_BILL_PAYMENT")
-                .amount(bill.getTotalAmount())
-                .paymentDate(LocalDate.now())
-                .referenceId(bill.getId())
-                .notes("Payment recorded by customer: " + bill.getBillNumber())
-                .build();
-        paymentRepository.save(payment);
 
         return ResponseEntity.ok(updatedBill);
     }

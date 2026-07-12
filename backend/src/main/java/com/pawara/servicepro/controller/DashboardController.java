@@ -26,6 +26,7 @@ public class DashboardController {
     private final MaintenanceRequestRepository requestRepository;
     private final ContractRepository contractRepository;
     private final PaymentRepository paymentRepository;
+    private final com.pawara.servicepro.service.ActivityLogService activityLogService;
 
     @GetMapping
     public ResponseEntity<?> getDashboardStats() {
@@ -76,6 +77,7 @@ public class DashboardController {
         stats.put("pendingRequests", pendingRequests);
         stats.put("paymentReminders", reminders);
         stats.put("totalActiveContracts", activeContracts.size());
+        stats.put("recentActivities", activityLogService.getRecentActivities());
 
         return ResponseEntity.ok(stats);
     }

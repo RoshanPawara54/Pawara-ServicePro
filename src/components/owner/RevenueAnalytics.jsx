@@ -1,22 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import api from '../../services/api';
 import { DollarSign, BarChart2, TrendingUp, TrendingDown, Layers, HelpCircle, Activity } from 'lucide-react';
 
 export default function RevenueAnalytics() {
-  const { apiFetch } = useAuth();
-  
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const fetchRevenue = async () => {
     try {
-      const res = await apiFetch('http://localhost:8080/api/owner/revenue');
-      if (!res.ok) throw new Error('Failed to load revenue calculations');
-      const payload = await res.json();
-      setData(payload);
+      const res = await api.get('/api/owner/revenue');
+      setData(res.data);
     } catch (err) {
-      setError(err.message || 'Error occurred');
+      setError(err.response?.data?.message || err.message || 'Error occurred');
     } finally {
       setLoading(false);
     }

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useLocation } from 'react-router-dom';
+import api from '../../services/api';
 import { Plus, Trash, FileText, Check, Printer, AlertCircle, ShoppingCart } from 'lucide-react';
 
-export default function ShopBilling({ initialMode = 'bill' }) {
-  const { apiFetch } = useAuth();
+export default function ShopBilling() {
+  const location = useLocation();
+  const isQuotationMode = location.pathname === '/shop/quotations';
   
-  const [billType, setBillType] = useState('SHOP_BILL'); // 'SHOP_BILL' or 'SHOP_QUOTATION'
+  const [billType, setBillType] = useState(isQuotationMode ? 'SHOP_QUOTATION' : 'SHOP_BILL'); // 'SHOP_BILL' or 'SHOP_QUOTATION'
   const [customerName, setCustomerName] = useState('');
   const [labourCharge, setLabourCharge] = useState('0');
   const [items, setItems] = useState([
@@ -21,20 +23,18 @@ export default function ShopBilling({ initialMode = 'bill' }) {
   const [activeTab, setActiveTab] = useState('create'); // 'create' or 'history'
 
   useEffect(() => {
-    setBillType(initialMode === 'quotation' ? 'SHOP_QUOTATION' : 'SHOP_BILL');
-  }, [initialMode]);
+    setBillType(isQuotationMode ? 'SHOP_QUOTATION' : 'SHOP_BILL');
+  }, [isQuotationMode]);
 
   const fetchPastBills = async () => {
     try {
-      const res = await apiFetch('http://localhost:8080/api/owner/bills');
-      if (!res.ok) throw new Error('Failed to load past invoices');
-      const data = await res.json();
+      const res = await api.get('/api/owner/bills');
       
       // Filter out maintenance material bills so we only show shop bills/quotations in the history here
-      const shopInvoices = data.filter(b => b.billType === 'SHOP_BILL' || b.billType === 'SHOP_QUOTATION');
+      const shopInvoices = res.data.filter(b => b.billType === 'SHOP_BILL' || b.billType === 'SHOP_QUOTATION');
       setPastBills(shopInvoices);
     } catch (err) {
-      setError(err.message || 'Error occurred');
+      setError(err.response?.data?.message || err.message || 'Error occurred');
     }
   };
 
@@ -96,13 +96,8 @@ export default function ShopBilling({ initialMode = 'bill' }) {
     };
 
     try {
-      const res = await apiFetch('http://localhost:8080/api/owner/bills', {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      });
-
-      if (!res.ok) throw new Error('Failed to create bill');
-      const savedBill = await res.json();
+      const res = await api.post('/api/owner/bills', payload);
+      const savedBill = res.data;
       
       setSuccess(`${billType === 'SHOP_QUOTATION' ? 'Quotation' : 'Bill'} created successfully: ${savedBill.billNumber}`);
       setActiveBillDetail(savedBill);
@@ -112,17 +107,14 @@ export default function ShopBilling({ initialMode = 'bill' }) {
       setLabourCharge('0');
       setItems([{ itemName: '', quantity: '1', unitPrice: '0', unitCost: '0' }]);
     } catch (err) {
-      setError(err.message || 'Error occurred');
+      setError(err.response?.data?.message || err.message || 'Error occurred');
     }
   };
 
   const handleConvertQuotation = async (id) => {
     try {
-      const res = await apiFetch(`http://localhost:8080/api/owner/bills/${id}/convert`, {
-        method: 'PUT'
-      });
-      if (!res.ok) throw new Error('Failed to convert quotation');
-      const updated = await res.json();
+      const res = await api.put(`/api/owner/bills/${id}/convert`);
+      const updated = res.data;
       
       setSuccess(`Quotation successfully converted to Bill: ${updated.billNumber}`);
       if (activeBillDetail && activeBillDetail.id === id) {
@@ -130,7 +122,7 @@ export default function ShopBilling({ initialMode = 'bill' }) {
       }
       fetchPastBills();
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
     }
   };
 
