@@ -892,7 +892,7 @@ export default function CustomerManagement() {
               <thead>
                 <tr>
                   <th>Client Name</th>
-                  <th>Extensible Type</th>
+                  <th>Status</th>
                   <th>Contact Person</th>
                   <th>Phone</th>
                   <th>Email</th>
@@ -916,12 +916,9 @@ export default function CustomerManagement() {
                         <strong style={{ color: 'var(--text-main)' }}>{cust.name}</strong>
                       </td>
                       <td>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          <span className="badge badge-quotation">{cust.customerType}</span>
-                          <span className={`badge ${(cust.status || 'ACTIVE') === 'INACTIVE' ? 'badge-unpaid' : 'badge-completed'}`}>
-                            {cust.status || 'ACTIVE'}
-                          </span>
-                        </div>
+                        <span className={`badge ${(cust.status || 'ACTIVE') === 'INACTIVE' ? 'badge-unpaid' : 'badge-completed'}`}>
+                          {cust.status || 'ACTIVE'}
+                        </span>
                       </td>
                       <td>{cust.contactPerson || '-'}</td>
                       <td>{cust.phone || '-'}</td>
