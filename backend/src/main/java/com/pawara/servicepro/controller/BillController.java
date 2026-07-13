@@ -17,6 +17,7 @@ import java.util.*;
 public class BillController {
 
     private final BillRepository billRepository;
+    private final BillItemRepository billItemRepository;
     private final CustomerRepository customerRepository;
     private final MaintenanceRequestRepository requestRepository;
     private final UserRepository userRepository;
@@ -65,15 +66,27 @@ public class BillController {
         BigDecimal aggregateCost = BigDecimal.ZERO;
         BigDecimal aggregateTotal = BigDecimal.ZERO;
 
+        java.time.LocalDateTime createdAtVal = null;
+        if (request.getCreatedAt() != null && !request.getCreatedAt().isEmpty()) {
+            try {
+                createdAtVal = java.time.LocalDate.parse(request.getCreatedAt()).atTime(java.time.LocalTime.now());
+            } catch (Exception e) {
+                // fallback
+            }
+        }
+
         List<BillItem> billItems = new ArrayList<>();
         Bill bill = Bill.builder()
                 .billNumber(billNumber)
                 .billType(request.getBillType())
                 .customerName(request.getCustomerName())
+                .customerAddress(request.getCustomerAddress())
+                .createdAt(createdAtVal)
                 .customer(customer)
                 .maintenanceRequest(maintenanceRequest)
                 .labourCharge(request.getLabourCharge() != null ? request.getLabourCharge() : BigDecimal.ZERO)
                 .status(request.getStatus())
+                .businessName(request.getBusinessName())
                 .build();
 
         if (request.getItems() != null) {
@@ -111,7 +124,7 @@ public class BillController {
             requestRepository.save(maintenanceRequest);
             
             // Also log request completion
-            activityLogService.logActivity("Maintenance Request Completed", "Maintenance Request #" + maintenanceRequest.getId() + " completed");
+            activityLogService.logActivity("Maintenance Request Completed", maintenanceRequest.getCustomer().getName() + "'s maintainance request Completed");
         }
 
         if ("PAID".equals(savedBill.getStatus()) && customer != null) {
@@ -128,15 +141,72 @@ public class BillController {
         }
 
         // Log bill creation
+        String targetName = savedBill.getCustomer() != null ? savedBill.getCustomer().getName() : savedBill.getCustomerName();
         if ("SHOP_BILL".equals(savedBill.getBillType())) {
-            activityLogService.logActivity("Bill Created", "Bill #" + savedBill.getBillNumber() + " created");
+            activityLogService.logActivity("Bill Created", targetName + " Bill Created");
         } else if ("SHOP_QUOTATION".equals(savedBill.getBillType())) {
-            activityLogService.logActivity("Quotation Created", "Quotation #" + savedBill.getBillNumber() + " created");
+            activityLogService.logActivity("Quotation Created", targetName + " Quotation Created");
         } else if ("MAINTENANCE_MATERIAL_BILL".equals(savedBill.getBillType())) {
-            activityLogService.logActivity("Material Bill Generated", "Material Bill #" + savedBill.getBillNumber() + " generated");
+            activityLogService.logActivity("Material Bill Generated", targetName + " Material Bill Generated");
         }
 
         return ResponseEntity.ok(savedBill);
+    }
+
+    @PutMapping("/api/owner/bills/{id}")
+    public ResponseEntity<?> updateBill(@PathVariable Long id, @RequestBody BillCreationRequest request) {
+        Optional<Bill> billOpt = billRepository.findById(id);
+        if (billOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Bill bill = billOpt.get();
+        bill.setCustomerName(request.getCustomerName());
+        bill.setCustomerAddress(request.getCustomerAddress());
+        bill.setLabourCharge(request.getLabourCharge() != null ? request.getLabourCharge() : BigDecimal.ZERO);
+        bill.setBusinessName(request.getBusinessName());
+        
+        if (request.getCreatedAt() != null && !request.getCreatedAt().isEmpty()) {
+            try {
+                bill.setCreatedAt(java.time.LocalDate.parse(request.getCreatedAt()).atTime(java.time.LocalTime.now()));
+            } catch (Exception e) {
+                // ignore
+            }
+        }
+
+        billItemRepository.deleteAllInBatch(bill.getItems());
+        bill.getItems().clear();
+        BigDecimal aggregateCost = BigDecimal.ZERO;
+        BigDecimal aggregateTotal = BigDecimal.ZERO;
+
+        if (request.getItems() != null) {
+            for (ItemRequest ir : request.getItems()) {
+                BigDecimal totalItemPrice = ir.getUnitPrice().multiply(ir.getQuantity());
+                BigDecimal itemCost = ir.getUnitCost() != null ? ir.getUnitCost() : BigDecimal.ZERO;
+                BigDecimal totalItemCost = itemCost.multiply(ir.getQuantity());
+                
+                aggregateCost = aggregateCost.add(totalItemCost);
+                aggregateTotal = aggregateTotal.add(totalItemPrice);
+
+                BillItem item = BillItem.builder()
+                        .bill(bill)
+                        .itemName(ir.getItemName())
+                        .quantity(ir.getQuantity())
+                        .unitPrice(ir.getUnitPrice())
+                        .unitCost(itemCost)
+                        .totalPrice(totalItemPrice)
+                        .build();
+                bill.getItems().add(item);
+            }
+        }
+
+        bill.setMaterialCost(aggregateCost);
+        bill.setTotalAmount(aggregateTotal.add(bill.getLabourCharge()));
+
+        Bill updated = billRepository.save(bill);
+        String targetName = updated.getCustomer() != null ? updated.getCustomer().getName() : updated.getCustomerName();
+        activityLogService.logActivity("Bill Updated", targetName + " Bill Updated");
+        return ResponseEntity.ok(updated);
     }
 
     @PutMapping("/api/owner/bills/{id}/convert")
@@ -158,7 +228,8 @@ public class BillController {
         Bill updatedBill = billRepository.save(bill);
         
         // Log conversion
-        activityLogService.logActivity("Quotation Converted", "Quotation converted to Bill #" + updatedBill.getBillNumber());
+        String convTargetName = updatedBill.getCustomer() != null ? updatedBill.getCustomer().getName() : updatedBill.getCustomerName();
+        activityLogService.logActivity("Quotation Converted", convTargetName + " Quotation Converted to Bill");
         
         return ResponseEntity.ok(updatedBill);
     }
@@ -187,7 +258,8 @@ public class BillController {
         }
 
         // Log activity
-        activityLogService.logActivity("Bill Paid", "Bill #" + bill.getBillNumber() + " marked as PAID");
+        String payTargetName = bill.getCustomer() != null ? bill.getCustomer().getName() : bill.getCustomerName();
+        activityLogService.logActivity("Bill Paid", payTargetName + " Bill Marked as PAID");
 
         return ResponseEntity.ok(updatedBill);
     }
@@ -214,7 +286,8 @@ public class BillController {
         }
 
         // Log activity
-        activityLogService.logActivity("Bill Marked Pending", "Bill #" + bill.getBillNumber() + " marked back to pending");
+        String unpayTargetName = bill.getCustomer() != null ? bill.getCustomer().getName() : bill.getCustomerName();
+        activityLogService.logActivity("Bill Marked Pending", unpayTargetName + " Bill Marked back to pending");
 
         return ResponseEntity.ok(updatedBill);
     }
@@ -314,10 +387,13 @@ public class BillController {
     public static class BillCreationRequest {
         private String billType;
         private String customerName;
+        private String customerAddress;
+        private String createdAt;
         private Long customerId;
         private Long maintenanceRequestId;
         private BigDecimal labourCharge;
         private String status;
+        private String businessName;
         private List<ItemRequest> items;
     }
 

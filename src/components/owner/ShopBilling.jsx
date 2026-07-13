@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import api from '../../services/api';
-import { Plus, Trash, FileText, Check, Printer, AlertCircle, ShoppingCart } from 'lucide-react';
+import { Plus, Trash, FileText, Check, Printer, AlertCircle, ShoppingCart, Edit, Pencil } from 'lucide-react';
 
 export default function ShopBilling() {
   const location = useLocation();
   const isQuotationMode = location.pathname === '/shop/quotations';
   
   const [billType, setBillType] = useState(isQuotationMode ? 'SHOP_QUOTATION' : 'SHOP_BILL'); // 'SHOP_BILL' or 'SHOP_QUOTATION'
+  const [businessName, setBusinessName] = useState('PRASHANSHA_ELECTRICAL'); // 'PRASHANSHA_ELECTRICAL' or 'PAWARA_ELECTRICAL'
   const [customerName, setCustomerName] = useState('');
+  const [customerAddress, setCustomerAddress] = useState('');
+  const [createdAt, setCreatedAt] = useState(new Date().toISOString().split('T')[0]);
   const [labourCharge, setLabourCharge] = useState('0');
   const [items, setItems] = useState([
     { itemName: '', quantity: '1', unitPrice: '0', unitCost: '0' }
   ]);
+
+  const [editingBillId, setEditingBillId] = useState(null);
 
   // List of bills state
   const [pastBills, setPastBills] = useState([]);
@@ -22,9 +27,35 @@ export default function ShopBilling() {
   const [success, setSuccess] = useState('');
   const [activeTab, setActiveTab] = useState('create'); // 'create' or 'history'
 
+  const getBusinessNameDisplay = (bill) => {
+    if (!bill) return '';
+    if (bill.billType === 'SHOP_QUOTATION') {
+      return 'PRASHANSHA ELECTRICALS';
+    }
+    if (bill.businessName === 'PAWARA_ELECTRICAL') {
+      return 'PAWARA ELECTRICAL';
+    }
+    return 'PRASHANSHA ELECTRICAL';
+  };
+
   useEffect(() => {
     setBillType(isQuotationMode ? 'SHOP_QUOTATION' : 'SHOP_BILL');
   }, [isQuotationMode]);
+
+  useEffect(() => {
+    if (location.state && location.state.viewBillId) {
+      const loadBillFromState = async () => {
+        try {
+          const res = await api.get(`/api/owner/bills/${location.state.viewBillId}`);
+          setActiveBillDetail(res.data);
+          setActiveTab('history');
+        } catch (err) {
+          setError('Failed to load bill detail');
+        }
+      };
+      loadBillFromState();
+    }
+  }, [location.state]);
 
   const fetchPastBills = async () => {
     try {
@@ -85,8 +116,11 @@ export default function ShopBilling() {
     const payload = {
       billType,
       customerName,
+      customerAddress,
+      createdAt,
       labourCharge: parseFloat(labourCharge) || 0,
       status: billType === 'SHOP_QUOTATION' ? 'QUOTATION' : 'BILL',
+      businessName: billType === 'SHOP_QUOTATION' ? 'PRASHANSHA_ELECTRICALS' : businessName,
       items: items.map(item => ({
         itemName: item.itemName,
         quantity: parseFloat(item.quantity) || 0,
@@ -96,16 +130,27 @@ export default function ShopBilling() {
     };
 
     try {
-      const res = await api.post('/api/owner/bills', payload);
+      let res;
+      if (editingBillId) {
+        res = await api.put(`/api/owner/bills/${editingBillId}`, payload);
+      } else {
+        res = await api.post('/api/owner/bills', payload);
+      }
       const savedBill = res.data;
       
-      setSuccess(`${billType === 'SHOP_QUOTATION' ? 'Quotation' : 'Bill'} created successfully: ${savedBill.billNumber}`);
+      setSuccess(`${billType === 'SHOP_QUOTATION' ? 'Quotation' : 'Bill'} ${editingBillId ? 'updated' : 'created'} successfully: ${savedBill.billNumber}`);
       setActiveBillDetail(savedBill);
       
       // Reset form
       setCustomerName('');
+      setCustomerAddress('');
+      setCreatedAt(new Date().toISOString().split('T')[0]);
       setLabourCharge('0');
       setItems([{ itemName: '', quantity: '1', unitPrice: '0', unitCost: '0' }]);
+      setEditingBillId(null);
+      
+      // Refresh list
+      fetchPastBills();
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Error occurred');
     }
@@ -124,6 +169,33 @@ export default function ShopBilling() {
     } catch (err) {
       setError(err.response?.data?.message || err.message);
     }
+  };
+
+  const handleEditBill = (b) => {
+    setEditingBillId(b.id);
+    setBillType(b.billType);
+    setBusinessName(b.businessName || 'PRASHANSHA_ELECTRICAL');
+    setCustomerName(b.customerName || '');
+    setCustomerAddress(b.customerAddress || '');
+    if (b.createdAt) {
+      setCreatedAt(new Date(b.createdAt).toISOString().split('T')[0]);
+    } else {
+      setCreatedAt(new Date().toISOString().split('T')[0]);
+    }
+    setLabourCharge(b.labourCharge ? b.labourCharge.toString() : '0');
+    
+    if (b.items && b.items.length > 0) {
+      setItems(b.items.map(item => ({
+        itemName: item.itemName,
+        quantity: item.quantity.toString(),
+        unitPrice: item.unitPrice.toString(),
+        unitCost: item.unitCost ? item.unitCost.toString() : '0'
+      })));
+    } else {
+      setItems([{ itemName: '', quantity: '1', unitPrice: '0', unitCost: '0' }]);
+    }
+    
+    setActiveTab('create');
   };
 
   const handlePrint = () => {
@@ -210,8 +282,27 @@ export default function ShopBilling() {
 
       {activeTab === 'create' && !activeBillDetail && (
         <div className="glass-card no-print">
+          {editingBillId && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px' }}>
+              <h3 style={{ color: 'var(--text-main)', margin: 0 }}>Edit Invoice: Bill #{pastBills.find(b => b.id === editingBillId)?.billNumber}</h3>
+              <button 
+                type="button" 
+                className="btn-secondary btn-small"
+                onClick={() => {
+                  setEditingBillId(null);
+                  setCustomerName('');
+                  setCustomerAddress('');
+                  setCreatedAt(new Date().toISOString().split('T')[0]);
+                  setLabourCharge('0');
+                  setItems([{ itemName: '', quantity: '1', unitPrice: '0', unitCost: '0' }]);
+                }}
+              >
+                Cancel Edit
+              </button>
+            </div>
+          )}
           <form onSubmit={handleSubmit}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '20px' }}>
               <div className="form-group">
                 <label className="form-label">Invoice Type</label>
                 <select 
@@ -224,6 +315,20 @@ export default function ShopBilling() {
                 </select>
               </div>
 
+              {billType === 'SHOP_BILL' && (
+                <div className="form-group">
+                  <label className="form-label">Bill Format / Business Name</label>
+                  <select 
+                    className="form-select"
+                    value={businessName} 
+                    onChange={(e) => setBusinessName(e.target.value)}
+                  >
+                    <option value="PRASHANSHA_ELECTRICAL">Prashansha Electrical Bill</option>
+                    <option value="PAWARA_ELECTRICAL">Pawara Electrical Bill</option>
+                  </select>
+                </div>
+              )}
+
               <div className="form-group">
                 <label className="form-label">Customer Name (Walk-In)</label>
                 <input 
@@ -232,6 +337,27 @@ export default function ShopBilling() {
                   placeholder="e.g. Ramesh Chandra" 
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Customer Address</label>
+                <input 
+                  className="form-input"
+                  type="text" 
+                  placeholder="e.g. Pathardi Phata, Nashik" 
+                  value={customerAddress}
+                  onChange={(e) => setCustomerAddress(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Invoice Date</label>
+                <input 
+                  className="form-input"
+                  type="date" 
+                  value={createdAt}
+                  onChange={(e) => setCreatedAt(e.target.value)}
                 />
               </div>
             </div>
@@ -347,7 +473,7 @@ export default function ShopBilling() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
               <button className="btn-primary" type="submit">
                 <ShoppingCart size={18} />
-                Generate {billType === 'SHOP_QUOTATION' ? 'Quotation' : 'Bill'}
+                {editingBillId ? 'Update' : 'Generate'} {billType === 'SHOP_QUOTATION' ? 'Quotation' : 'Bill'}
               </button>
             </div>
           </form>
@@ -395,7 +521,7 @@ export default function ShopBilling() {
                 margin: '0 0 5px 0',
                 letterSpacing: '1px'
               }}>
-                {activeBillDetail.billType === 'SHOP_QUOTATION' ? 'PRASHONSHA ELECTRICALS' : 'PAWARA ELECTRICALS'}
+                {getBusinessNameDisplay(activeBillDetail)}
               </h1>
               <h4 style={{ 
                 color: '#000', 
@@ -410,7 +536,7 @@ export default function ShopBilling() {
                 fontSize: '0.85rem', 
                 margin: '0'
               }}>
-                Nashik Maharashtra-422010 Mob.:{activeBillDetail.billType === 'SHOP_QUOTATION' ? '9422761843' : '9422761843'}
+                Nashik Maharashtra-422010 Mob.:+919422761843
               </p>
             </div>
 
@@ -420,13 +546,20 @@ export default function ShopBilling() {
             {/* Metadata (To, Date, Bill No) */}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'flex-start' }}>
               {/* Left side: Client To details */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '55%' }}>
-                <div style={{ display: 'flex', borderBottom: '1px solid #000', paddingBottom: '2px' }}>
-                  <span style={{ fontWeight: 'bold', marginRight: '5px' }}>To,</span>
-                  <span style={{ fontWeight: 'bold' }}>{activeBillDetail.customerName || activeBillDetail.customer?.name}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '55%', color: '#000' }}>
+                {/* Line 1: To, [Customer Name] */}
+                <div style={{ display: 'flex', alignItems: 'flex-end', minHeight: '24px' }}>
+                  <span style={{ fontWeight: 'bold', fontSize: '1rem', marginRight: '8px', whiteSpace: 'nowrap' }}>To,</span>
+                  <div style={{ flex: 1, borderBottom: '1px solid #000', paddingBottom: '2px', fontWeight: 'bold', fontSize: '1rem' }}>
+                    {activeBillDetail.customerName || activeBillDetail.customer?.name || ''}
+                  </div>
                 </div>
-                <div style={{ borderBottom: '1px solid #000', paddingBottom: '2px', minHeight: '22px' }}>
-                  <span style={{ fontSize: '0.9rem' }}>{activeBillDetail.customer?.address || 'Pathrdi Phata'}</span>
+                {/* Line 2: [Address] */}
+                <div style={{ display: 'flex', alignItems: 'flex-end', minHeight: '24px' }}>
+                  <span style={{ fontWeight: 'bold', fontSize: '1rem', marginRight: '8px', visibility: 'hidden', whiteSpace: 'nowrap' }}>To,</span>
+                  <div style={{ flex: 1, borderBottom: '1px solid #000', paddingBottom: '2px', fontSize: '0.95rem' }}>
+                    {activeBillDetail.customerAddress || activeBillDetail.customer?.address || ''}
+                  </div>
                 </div>
               </div>
 
@@ -480,41 +613,46 @@ export default function ShopBilling() {
               <tbody>
                 {activeBillDetail.items && activeBillDetail.items.map((item, idx) => (
                   <tr key={idx}>
-                    <td style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'center' }}>{idx + 1}.</td>
-                    <td style={{ border: '1px solid #000', padding: '6px 8px' }}>{item.itemName}</td>
-                    <td style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'center' }}>{item.quantity}</td>
-                    <td style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'right' }}>{item.unitPrice.toFixed(2)}</td>
-                    <td style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'right' }}>{item.totalPrice.toFixed(2)}</td>
+                    <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px', textAlign: 'center' }}>{idx + 1}.</td>
+                    <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px' }}>{item.itemName}</td>
+                    <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px', textAlign: 'center' }}>{item.quantity}</td>
+                    <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px', textAlign: 'right' }}>{item.unitPrice.toFixed(2)}</td>
+                    <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px', textAlign: 'right' }}>{item.totalPrice.toFixed(2)}</td>
                   </tr>
                 ))}
                 {/* Labour Charge if non-zero */}
                 {activeBillDetail.labourCharge > 0 && (
                   <tr>
-                    <td style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'center' }}>{activeBillDetail.items.length + 1}.</td>
-                    <td style={{ border: '1px solid #000', padding: '6px 8px' }}>Labour & Service Charges</td>
-                    <td style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'center' }}>1</td>
-                    <td style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'right' }}>{activeBillDetail.labourCharge.toFixed(2)}</td>
-                    <td style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'right' }}>{activeBillDetail.labourCharge.toFixed(2)}</td>
+                    <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px', textAlign: 'center' }}>{activeBillDetail.items.length + 1}.</td>
+                    <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px' }}>Labour & Service Charges</td>
+                    <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px', textAlign: 'center' }}>1</td>
+                    <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px', textAlign: 'right' }}>{activeBillDetail.labourCharge.toFixed(2)}</td>
+                    <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px', textAlign: 'right' }}>{activeBillDetail.labourCharge.toFixed(2)}</td>
                   </tr>
                 )}
                 {/* Total Row */}
                 <tr>
-                  <td colSpan="3" style={{ border: '1px solid #000', padding: '6px 8px' }}></td>
-                  <td style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'right', fontWeight: 'bold' }}>TOTAL</td>
-                  <td style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'right', fontWeight: 'bold' }}>{activeBillDetail.totalAmount.toFixed(2)}</td>
+                  <td colSpan="3" style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', borderTop: '2px solid #000', padding: '6px 8px' }}></td>
+                  <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', borderTop: '2px solid #000', padding: '6px 8px', textAlign: 'right', fontWeight: 'bold' }}>TOTAL</td>
+                  <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', borderTop: '2px solid #000', padding: '6px 8px', textAlign: 'right', fontWeight: 'bold' }}>{activeBillDetail.totalAmount.toFixed(2)}</td>
                 </tr>
               </tbody>
             </table>
 
-            {/* Note and Proprietor block */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '30px', alignItems: 'flex-start' }}>
-              <div style={{ fontSize: '0.8rem', maxWidth: '60%' }}>
-                <p style={{ margin: '0 0 4px 0' }}><strong>Note:</strong> RR wire, Legrand Switchs , Pipe regular,</p>
-                <p style={{ margin: '0' }}><strong>Payment :</strong> step by step for the wiring and Switches, On light Final</p>
+            {/* Note, Bank Details, and Proprietor block */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '30px', alignItems: 'flex-end', color: '#000' }}>
+              {/* Left side: Bank Details */}
+              <div style={{ fontSize: '0.85rem', textAlign: 'left', lineHeight: '1.6' }}>
+                <strong style={{ display: 'block', fontSize: '0.9rem', marginBottom: '6px' }}>Bank Details :</strong>
+                <div><strong>Bank Name</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: Panjab National Bank</div>
+                <div><strong>A/C No.</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: 0849209000000059</div>
+                <div><strong>Branch-IFS Code</strong> : PUNB0084920</div>
               </div>
-              <div style={{ textAlign: 'center', minWidth: '200px' }}>
-                <strong style={{ display: 'block', textTransform: 'uppercase', marginBottom: '55px', fontSize: '0.9rem' }}>
-                  {activeBillDetail.billType === 'SHOP_QUOTATION' ? 'PRASHONSHA ELECTRICALS' : 'PAWARA ELECTRICALS'}
+
+              {/* Right side: Proprietor signature */}
+              <div style={{ textAlign: 'center', minWidth: '220px' }}>
+                <strong style={{ display: 'block', textTransform: 'uppercase', marginBottom: '50px', fontSize: '0.95rem', fontWeight: 'bold' }}>
+                  {getBusinessNameDisplay(activeBillDetail)}
                 </strong>
                 <span style={{ borderTop: '1px solid #000', paddingTop: '4px', fontSize: '0.85rem', fontWeight: 'bold' }}>
                   Proprietor
@@ -571,12 +709,20 @@ export default function ShopBilling() {
                           {b.status}
                         </span>
                       </td>
-                      <td className="actions-cell" style={{ display: 'flex', gap: '8px' }}>
+                      <td className="actions-cell" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         <button 
                           className="btn-secondary btn-small"
                           onClick={() => setActiveBillDetail(b)}
                         >
                           View & Print
+                        </button>
+                        <button 
+                          className="btn-secondary btn-small"
+                          onClick={() => handleEditBill(b)}
+                          title="Edit Invoice"
+                          style={{ padding: '5px 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          <Edit size={14} />
                         </button>
                         {b.billType === 'SHOP_QUOTATION' && (
                           <button 

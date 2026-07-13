@@ -13,7 +13,8 @@ import {
   CreditCard,
   KeyRound,
   ShieldCheck,
-  CheckSquare
+  CheckSquare,
+  Printer
 } from 'lucide-react';
 
 export default function CustomerManagement() {
@@ -74,6 +75,8 @@ export default function CustomerManagement() {
   const [billItems, setBillItems] = useState([
     { itemName: '', quantity: '1', unitPrice: '0', unitCost: '0' }
   ]);
+
+  const [activeBillDetail, setActiveBillDetail] = useState(null);
 
   // Custom confirmation popup states
   const [confirmModal, setConfirmModal] = useState({
@@ -397,6 +400,179 @@ export default function CustomerManagement() {
       (c.contactPerson && c.contactPerson.toLowerCase().includes(searchLower))
     );
   });
+
+  if (activeBillDetail) {
+    return (
+      <div className="glass-card" style={{ maxWidth: '800px', margin: '0 auto' }}>
+        {/* Action Row - Hidden when printing */}
+        <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '15px', marginBottom: '25px' }}>
+          <button className="btn-secondary" onClick={() => setActiveBillDetail(null)}>
+            ← Back
+          </button>
+          <button className="btn-secondary" onClick={() => window.print()}>
+            <Printer size={18} /> Print Invoice
+          </button>
+        </div>
+
+        {/* Printable Invoice Sheet */}
+        <div className="print-sheet" style={{ 
+          color: '#000', 
+          background: '#fff', 
+          fontFamily: 'sans-serif',
+          padding: '30px',
+          lineHeight: '1.4'
+        }}>
+          {/* Header */}
+          <div style={{ textAlign: 'center', marginBottom: '10px' }}>
+            <h1 style={{ 
+              color: '#e11d48', 
+              fontSize: '2.5rem', 
+              fontWeight: 'bold', 
+              margin: '0 0 5px 0',
+              letterSpacing: '1px'
+            }}>
+              {activeBillDetail.billType === 'SHOP_QUOTATION' ? 'PRASHANSHA ELECTRICALS' : (activeBillDetail.businessName === 'PAWARA_ELECTRICAL' ? 'PAWARA ELECTRICAL' : 'PRASHANSHA ELECTRICAL')}
+            </h1>
+            <h4 style={{ 
+              color: '#000', 
+              fontSize: '0.95rem', 
+              fontWeight: 'bold',
+              margin: '0 0 4px 0'
+            }}>
+              Electrical Wiring, Fitting Works, Supply of All Kind of Electricals Goods
+            </h4>
+            <p style={{ 
+              color: '#000', 
+              fontSize: '0.85rem', 
+              margin: '0'
+            }}>
+              Nashik Maharashtra-422010 Mob.:+919422761843
+            </p>
+          </div>
+
+          {/* Thick dividing line */}
+          <hr style={{ border: 'none', borderTop: '2px solid #000', margin: '10px 0 15px 0' }} />
+
+          {/* Metadata (To, Date, Bill No) */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'flex-start' }}>
+            {/* Left side: Client To details */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '55%', color: '#000' }}>
+              {/* Line 1: To, [Customer Name] */}
+              <div style={{ display: 'flex', alignItems: 'flex-end', minHeight: '24px' }}>
+                <span style={{ fontWeight: 'bold', fontSize: '1rem', marginRight: '8px', whiteSpace: 'nowrap' }}>To,</span>
+                <div style={{ flex: 1, borderBottom: '1px solid #000', paddingBottom: '2px', fontWeight: 'bold', fontSize: '1rem' }}>
+                  {activeBillDetail.customerName || activeBillDetail.customer?.name || ''}
+                </div>
+              </div>
+              {/* Line 2: [Address] */}
+              <div style={{ display: 'flex', alignItems: 'flex-end', minHeight: '24px' }}>
+                <span style={{ fontWeight: 'bold', fontSize: '1rem', marginRight: '8px', visibility: 'hidden', whiteSpace: 'nowrap' }}>To,</span>
+                <div style={{ flex: 1, borderBottom: '1px solid #000', paddingBottom: '2px', fontSize: '0.95rem' }}>
+                  {activeBillDetail.customerAddress || activeBillDetail.customer?.address || ''}
+                </div>
+              </div>
+            </div>
+
+            {/* Right side: Date and Bill number */}
+            <div style={{ textAlign: 'right', minWidth: '200px' }}>
+              <div style={{ marginBottom: '6px' }}>
+                <strong style={{ fontWeight: 'bold' }}>Date : </strong>
+                <span>{new Date(activeBillDetail.createdAt).toLocaleDateString('en-GB')}</span>
+              </div>
+              {activeBillDetail.billType !== 'SHOP_QUOTATION' && (
+                <div>
+                  <strong style={{ fontWeight: 'bold' }}>Bill no : </strong>
+                  <span>{activeBillDetail.id || '80'}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Quotation Centered Title */}
+          {activeBillDetail.billType === 'SHOP_QUOTATION' && (
+            <div style={{ textAlign: 'center', marginBottom: '15px' }}>
+              <h3 style={{ 
+                textTransform: 'uppercase', 
+                letterSpacing: '2px', 
+                fontWeight: 'bold',
+                textDecoration: 'underline',
+                fontSize: '1.1rem'
+              }}>
+                QUOTATION
+              </h3>
+            </div>
+          )}
+
+          {/* Table with solid black grid lines */}
+          <table style={{ 
+            width: '100%', 
+            borderCollapse: 'collapse', 
+            border: '2px solid #000',
+            marginBottom: '20px',
+            color: '#000'
+          }}>
+            <thead>
+              <tr style={{ background: 'rgba(0,0,0,0.01)' }}>
+                <th style={{ border: '1px solid #000', padding: '6px 8px', width: '60px', textAlign: 'center', fontWeight: 'bold' }}>Sr.No.</th>
+                <th style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'left', fontWeight: 'bold' }}>Particular</th>
+                <th style={{ border: '1px solid #000', padding: '6px 8px', width: '70px', textAlign: 'center', fontWeight: 'bold' }}>Qty.</th>
+                <th style={{ border: '1px solid #000', padding: '6px 8px', width: '110px', textAlign: 'right', fontWeight: 'bold' }}>Rate</th>
+                <th style={{ border: '1px solid #000', padding: '6px 8px', width: '120px', textAlign: 'right', fontWeight: 'bold' }}>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {activeBillDetail.items && activeBillDetail.items.map((item, idx) => (
+                <tr key={idx}>
+                  <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px', textAlign: 'center' }}>{idx + 1}.</td>
+                  <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px' }}>{item.itemName}</td>
+                  <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px', textAlign: 'center' }}>{item.quantity}</td>
+                  <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px', textAlign: 'right' }}>{item.unitPrice.toFixed(2)}</td>
+                  <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px', textAlign: 'right' }}>{item.totalPrice.toFixed(2)}</td>
+                </tr>
+              ))}
+              {/* Labour Charge if non-zero */}
+              {activeBillDetail.labourCharge > 0 && (
+                <tr>
+                  <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px', textAlign: 'center' }}>{activeBillDetail.items.length + 1}.</td>
+                  <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px' }}>Labour & Service Charges</td>
+                  <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px', textAlign: 'center' }}>1</td>
+                  <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px', textAlign: 'right' }}>{activeBillDetail.labourCharge.toFixed(2)}</td>
+                  <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px', textAlign: 'right' }}>{activeBillDetail.labourCharge.toFixed(2)}</td>
+                </tr>
+              )}
+              {/* Total Row */}
+              <tr>
+                <td colSpan="3" style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', borderTop: '2px solid #000', padding: '6px 8px' }}></td>
+                <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', borderTop: '2px solid #000', padding: '6px 8px', textAlign: 'right', fontWeight: 'bold' }}>TOTAL</td>
+                <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', borderTop: '2px solid #000', padding: '6px 8px', textAlign: 'right', fontWeight: 'bold' }}>{activeBillDetail.totalAmount.toFixed(2)}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* Note, Bank Details, and Proprietor block */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '30px', alignItems: 'flex-end', color: '#000' }}>
+            {/* Left side: Bank Details */}
+            <div style={{ fontSize: '0.85rem', textAlign: 'left', lineHeight: '1.6' }}>
+              <strong style={{ display: 'block', fontSize: '0.9rem', marginBottom: '6px' }}>Bank Details :</strong>
+              <div><strong>Bank Name</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: Panjab National Bank</div>
+              <div><strong>A/C No.</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: 0849209000000059</div>
+              <div><strong>Branch-IFS Code</strong> : PUNB0084920</div>
+            </div>
+
+            {/* Right side: Proprietor signature */}
+            <div style={{ textAlign: 'center', minWidth: '220px' }}>
+              <strong style={{ display: 'block', textTransform: 'uppercase', marginBottom: '50px', fontSize: '0.95rem', fontWeight: 'bold' }}>
+                {activeBillDetail.billType === 'SHOP_QUOTATION' ? 'PRASHANSHA ELECTRICALS' : (activeBillDetail.businessName === 'PAWARA_ELECTRICAL' ? 'PAWARA ELECTRICAL' : 'PRASHANSHA ELECTRICAL')}
+              </strong>
+              <span style={{ borderTop: '1px solid #000', paddingTop: '4px', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                Proprietor
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -791,6 +967,21 @@ export default function CustomerManagement() {
                               </button>
                             )}
                             <button 
+                              className="btn-secondary btn-small"
+                              onClick={async () => {
+                                try {
+                                  const res = await api.get(`/api/owner/bills/${b.id}`);
+                                  setActiveBillDetail(res.data);
+                                } catch (err) {
+                                  setError('Failed to load bill detail');
+                                }
+                              }}
+                              title="View Invoice"
+                              style={{ padding: '6px 10px', color: 'var(--color-primary)', borderColor: 'rgba(99, 102, 241, 0.2)', background: 'rgba(99, 102, 241, 0.05)' }}
+                            >
+                              👁️ View
+                            </button>
+                            <button 
                               className="btn-danger btn-small"
                               onClick={() => handleDeleteBill(b.id)}
                               title="Delete Invoice"
@@ -931,11 +1122,30 @@ export default function CustomerManagement() {
                     </tr>
                   ))
                 ) : (
-                  <tr>
-                    <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '30px' }}>
-                      No customers found matching search criteria.
-                    </td>
-                  </tr>
+                  <>
+                    {/* Dummy hidden row to force identical column sizing as populated tabs */}
+                    <tr style={{ visibility: 'collapse', height: 0 }}>
+                      <td style={{ padding: 0, border: 'none' }}><strong style={{ color: 'var(--text-main)' }}>Tirupati Hospital</strong></td>
+                      <td style={{ padding: 0, border: 'none' }}>
+                        <span className="badge badge-completed">
+                          ACTIVE
+                        </span>
+                      </td>
+                      <td style={{ padding: 0, border: 'none' }}>Dr. A. K. Sharma</td>
+                      <td style={{ padding: 0, border: 'none' }}>+91 98765 43210</td>
+                      <td style={{ padding: 0, border: 'none' }}>contact@tirupati.org</td>
+                      <td className="actions-cell" style={{ padding: 0, border: 'none' }}>
+                        <button className="btn-primary btn-small">
+                          Open Profile
+                        </button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '30px' }}>
+                        No customers found matching search criteria.
+                      </td>
+                    </tr>
+                  </>
                 )}
               </tbody>
             </table>

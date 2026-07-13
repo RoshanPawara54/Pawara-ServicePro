@@ -27,6 +27,9 @@ public class Bill {
     @Column(name = "customer_name")
     private String customerName; // Text for walk-in shop customers
 
+    @Column(name = "customer_address")
+    private String customerAddress;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "customer_id", nullable = true)
     private Customer customer; // Links to customers for Maintenance customers
@@ -44,10 +47,13 @@ public class Bill {
     @Column(name = "total_amount", nullable = false)
     private BigDecimal totalAmount; // Total selling price (items + labour)
 
+    @Column(name = "business_name")
+    private String businessName;
+
     @Column(nullable = false)
     private String status; // "QUOTATION", "BILL", "UNPAID", "PAID"
 
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "bill", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
@@ -56,6 +62,8 @@ public class Bill {
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
     }
 }

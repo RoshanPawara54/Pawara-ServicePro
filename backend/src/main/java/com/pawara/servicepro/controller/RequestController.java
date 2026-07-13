@@ -51,7 +51,7 @@ public class RequestController {
 
         // Reject requests from inactive or trashed customers
         if (!"ACTIVE".equals(customer.getStatus())) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Your account is currently inactive. Please contact the service provider."));
+            return ResponseEntity.badRequest().body(Map.of("message", "Your account is Inactive. Please Contact Prashansha Electrical Services."));
         }
 
         MaintenanceRequest request = MaintenanceRequest.builder()
@@ -101,7 +101,7 @@ public class RequestController {
 
         // Log completion if state transitioned to COMPLETED
         if ("COMPLETED".equals(newStatus) && !"COMPLETED".equals(oldStatus)) {
-            activityLogService.logActivity("Maintenance Request Completed", "Maintenance Request #" + id + " completed");
+            activityLogService.logActivity("Maintenance Request Completed", request.getCustomer().getName() + "'s maintainance request Completed");
         }
 
         return ResponseEntity.ok(updatedRequest);

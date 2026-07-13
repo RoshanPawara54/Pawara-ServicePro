@@ -399,43 +399,33 @@ h6 {
 
 /* Printing styles */
 @media print {
-  body {
+  @page {
+    margin: 0;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .print-sheet, .print-sheet * {
+    visibility: visible;
+  }
+  .print-sheet {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
     background: #fff !important;
     color: #000 !important;
   }
-
-  .sidebar,
-  .btn-primary,
-  .btn-secondary,
-  .btn-danger,
-  .actions-cell,
-  .no-print {
-    display: none !important;
-  }
-
-  .main-content {
-    padding: 0 !important;
-  }
-
-  .glass-card {
-    border: none !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-  }
-
-  .data-table-container {
-    border: none !important;
-  }
-
-  .data-table th {
+  body, html {
+    background: #fff !important;
     color: #000 !important;
-    border-bottom: 2px solid #000 !important;
-  }
-
-  .data-table td {
-    color: #000 !important;
-    border-bottom: 1px solid #ddd !important;
+    display: block !important;
+    height: auto !important;
+    min-height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 }
 

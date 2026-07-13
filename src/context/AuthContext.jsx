@@ -23,6 +23,7 @@ export const AuthProvider = ({ children }) => {
           username: data.username,
           customerId: data.customerId || null,
           customerName: data.customerName || null,
+          customerStatus: data.customerStatus || null,
         });
       } catch (err) {
         localStorage.removeItem('token');
@@ -30,6 +31,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('username');
         localStorage.removeItem('customerId');
         localStorage.removeItem('customerName');
+        localStorage.removeItem('customerStatus');
         setUser(null);
       } finally {
         setLoading(false);
@@ -48,6 +50,7 @@ export const AuthProvider = ({ children }) => {
     if (data.customerId) {
       localStorage.setItem('customerId', data.customerId);
       localStorage.setItem('customerName', data.customerName);
+      localStorage.setItem('customerStatus', data.customerStatus || 'ACTIVE');
     }
 
     const userData = {
@@ -56,6 +59,7 @@ export const AuthProvider = ({ children }) => {
       username: data.username,
       customerId: data.customerId || null,
       customerName: data.customerName || null,
+      customerStatus: data.customerStatus || null,
     };
 
     setUser(userData);

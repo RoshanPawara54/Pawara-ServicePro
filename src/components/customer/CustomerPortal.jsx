@@ -33,6 +33,17 @@ export default function CustomerPortal() {
   // Selected bill detail for view & print
   const [selectedBillDetail, setSelectedBillDetail] = useState(null);
 
+  const getBusinessNameDisplay = (bill) => {
+    if (!bill) return '';
+    if (bill.billType === 'SHOP_QUOTATION') {
+      return 'PRASHANSHA ELECTRICALS';
+    }
+    if (bill.businessName === 'PAWARA_ELECTRICAL') {
+      return 'PAWARA ELECTRICAL';
+    }
+    return 'PRASHANSHA ELECTRICAL';
+  };
+
   // Custom confirmation popup states
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -229,7 +240,7 @@ export default function CustomerPortal() {
                 margin: '0 0 5px 0',
                 letterSpacing: '1px'
               }}>
-                PRASHANSA ELECTRICAL
+                {getBusinessNameDisplay(selectedBillDetail)}
               </h1>
               <h4 style={{ 
                 color: '#000', 
@@ -244,7 +255,7 @@ export default function CustomerPortal() {
                 fontSize: '0.85rem', 
                 margin: '0'
               }}>
-                Nashik Maharashtra-422010 Mob.:9552650767
+                Nashik Maharashtra-422010 Mob.:+919422761843
               </p>
             </div>
 
@@ -254,13 +265,20 @@ export default function CustomerPortal() {
             {/* Metadata (To, Date, Bill No) */}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'flex-start' }}>
               {/* Left: Customer To details */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '55%' }}>
-                <div style={{ display: 'flex', borderBottom: '1px solid #000', paddingBottom: '2px' }}>
-                  <span style={{ fontWeight: 'bold', marginRight: '5px' }}>To,</span>
-                  <span style={{ fontWeight: 'bold' }}>{user?.customerName || user?.username}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '55%', color: '#000' }}>
+                {/* Line 1: To, [Customer Name] */}
+                <div style={{ display: 'flex', alignItems: 'flex-end', minHeight: '24px' }}>
+                  <span style={{ fontWeight: 'bold', fontSize: '1rem', marginRight: '8px', whiteSpace: 'nowrap' }}>To,</span>
+                  <div style={{ flex: 1, borderBottom: '1px solid #000', paddingBottom: '2px', fontWeight: 'bold', fontSize: '1rem' }}>
+                    {selectedBillDetail.customerName || selectedBillDetail.customer?.name || user?.customerName || user?.username}
+                  </div>
                 </div>
-                <div style={{ borderBottom: '1px solid #000', paddingBottom: '2px', minHeight: '22px' }}>
-                  <span style={{ fontSize: '0.9rem' }}>Hospital, Nashik</span>
+                {/* Line 2: [Address] */}
+                <div style={{ display: 'flex', alignItems: 'flex-end', minHeight: '24px' }}>
+                  <span style={{ fontWeight: 'bold', fontSize: '1rem', marginRight: '8px', visibility: 'hidden', whiteSpace: 'nowrap' }}>To,</span>
+                  <div style={{ flex: 1, borderBottom: '1px solid #000', paddingBottom: '2px', fontSize: '0.95rem' }}>
+                    {selectedBillDetail.customerAddress || selectedBillDetail.customer?.address || 'Nashik'}
+                  </div>
                 </div>
               </div>
 
@@ -297,41 +315,46 @@ export default function CustomerPortal() {
               <tbody>
                 {selectedBillDetail.items && selectedBillDetail.items.map((item, idx) => (
                   <tr key={idx}>
-                    <td style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'center' }}>{idx + 1}.</td>
-                    <td style={{ border: '1px solid #000', padding: '6px 8px' }}>{item.itemName}</td>
-                    <td style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'center' }}>{item.quantity}</td>
-                    <td style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'right' }}>{item.unitPrice.toFixed(2)}</td>
-                    <td style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'right' }}>{item.totalPrice.toFixed(2)}</td>
+                    <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px', textAlign: 'center' }}>{idx + 1}.</td>
+                    <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px' }}>{item.itemName}</td>
+                    <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px', textAlign: 'center' }}>{item.quantity}</td>
+                    <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px', textAlign: 'right' }}>{item.unitPrice.toFixed(2)}</td>
+                    <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px', textAlign: 'right' }}>{item.totalPrice.toFixed(2)}</td>
                   </tr>
                 ))}
                 {/* Labour Charge if non-zero */}
                 {selectedBillDetail.labourCharge > 0 && (
                   <tr>
-                    <td style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'center' }}>{selectedBillDetail.items.length + 1}.</td>
-                    <td style={{ border: '1px solid #000', padding: '6px 8px' }}>Labour & Service Charges</td>
-                    <td style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'center' }}>1</td>
-                    <td style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'right' }}>{selectedBillDetail.labourCharge.toFixed(2)}</td>
-                    <td style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'right' }}>{selectedBillDetail.labourCharge.toFixed(2)}</td>
+                    <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px', textAlign: 'center' }}>{selectedBillDetail.items.length + 1}.</td>
+                    <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px' }}>Labour & Service Charges</td>
+                    <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px', textAlign: 'center' }}>1</td>
+                    <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px', textAlign: 'right' }}>{selectedBillDetail.labourCharge.toFixed(2)}</td>
+                    <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', padding: '6px 8px', textAlign: 'right' }}>{selectedBillDetail.labourCharge.toFixed(2)}</td>
                   </tr>
                 )}
                 {/* Total Row */}
                 <tr>
-                  <td colSpan="3" style={{ border: '1px solid #000', padding: '6px 8px' }}></td>
-                  <td style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'right', fontWeight: 'bold' }}>TOTAL</td>
-                  <td style={{ border: '1px solid #000', padding: '6px 8px', textAlign: 'right', fontWeight: 'bold' }}>{selectedBillDetail.totalAmount.toFixed(2)}</td>
+                  <td colSpan="3" style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', borderTop: '2px solid #000', padding: '6px 8px' }}></td>
+                  <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', borderTop: '2px solid #000', padding: '6px 8px', textAlign: 'right', fontWeight: 'bold' }}>TOTAL</td>
+                  <td style={{ borderLeft: '1px solid #000', borderRight: '1px solid #000', borderTop: '2px solid #000', padding: '6px 8px', textAlign: 'right', fontWeight: 'bold' }}>{selectedBillDetail.totalAmount.toFixed(2)}</td>
                 </tr>
               </tbody>
             </table>
 
-            {/* Note and Proprietor block */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '30px', alignItems: 'flex-start' }}>
-              <div style={{ fontSize: '0.8rem', maxWidth: '60%' }}>
-                <p style={{ margin: '0 0 4px 0' }}><strong>Note:</strong> RR wire, Legrand Switchs , Pipe regular,</p>
-                <p style={{ margin: '0' }}><strong>Payment :</strong> step by step for the wiring and Switches, On light Final</p>
+            {/* Note, Bank Details, and Proprietor block */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '30px', alignItems: 'flex-end', color: '#000' }}>
+              {/* Left side: Bank Details */}
+              <div style={{ fontSize: '0.85rem', textAlign: 'left', lineHeight: '1.6' }}>
+                <strong style={{ display: 'block', fontSize: '0.9rem', marginBottom: '6px' }}>Bank Details :</strong>
+                <div><strong>Bank Name</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: Panjab National Bank</div>
+                <div><strong>A/C No.</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: 0849209000000059</div>
+                <div><strong>Branch-IFS Code</strong> : PUNB0084920</div>
               </div>
-              <div style={{ textAlign: 'center', minWidth: '200px' }}>
-                <strong style={{ display: 'block', textTransform: 'uppercase', marginBottom: '55px', fontSize: '0.9rem' }}>
-                  PRASHANSA ELECTRICAL
+
+              {/* Right side: Proprietor signature */}
+              <div style={{ textAlign: 'center', minWidth: '220px' }}>
+                <strong style={{ display: 'block', textTransform: 'uppercase', marginBottom: '50px', fontSize: '0.95rem', fontWeight: 'bold' }}>
+                  {getBusinessNameDisplay(selectedBillDetail)}
                 </strong>
                 <span style={{ borderTop: '1px solid #000', paddingTop: '4px', fontSize: '0.85rem', fontWeight: 'bold' }}>
                   Proprietor
@@ -370,9 +393,15 @@ export default function CustomerPortal() {
                 <div>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Coverage Status</span>
                   <div style={{ marginTop: '5px' }}>
-                    <span className="badge badge-completed">
-                      {contract.status}
-                    </span>
+                    {user?.customerStatus === 'INACTIVE' ? (
+                      <span className="badge badge-pending" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                        Inactive
+                      </span>
+                    ) : (
+                      <span className="badge badge-completed">
+                        {contract.status}
+                      </span>
+                    )}
                   </div>
                 </div>
               </>
@@ -383,27 +412,39 @@ export default function CustomerPortal() {
             {/* Submit Request Form */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
               <div className="glass-card">
-                <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Send size={18} color="var(--color-primary)" />
-                  Submit Maintenance Request
-                </h3>
-                <form onSubmit={handleRequestSubmit}>
-                  <div className="form-group">
-                    <label className="form-label">Task Description</label>
-                    <textarea 
-                      className="form-input"
-                      rows="4"
-                      placeholder="Describe the issue, e.g., 'Hall light not working', 'Replace switches in lobby', 'Check main power fluctuations'"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      style={{ resize: 'none' }}
-                      required
-                    />
+                {user?.customerStatus === 'INACTIVE' ? (
+                  <div style={{ textAlign: 'center', padding: '20px' }}>
+                    <AlertCircle size={40} color="var(--color-danger)" style={{ marginBottom: '15px' }} />
+                    <h3 style={{ color: 'var(--text-main)', marginBottom: '10px' }}>Account Inactive</h3>
+                    <p style={{ color: 'var(--text-main)', fontSize: '0.95rem', fontWeight: '500', lineHeight: '1.6' }}>
+                      Your account is Inactive. Please Contact Prashansha Electrical Services.
+                    </p>
                   </div>
-                  <button className="btn-primary" type="submit" style={{ width: '100%', justifyContent: 'center' }}>
-                    Send Request
-                  </button>
-                </form>
+                ) : (
+                  <>
+                    <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Send size={18} color="var(--color-primary)" />
+                      Submit Maintenance Request
+                    </h3>
+                    <form onSubmit={handleRequestSubmit}>
+                      <div className="form-group">
+                        <label className="form-label">Task Description</label>
+                        <textarea 
+                          className="form-input"
+                          rows="4"
+                          placeholder="Describe the issue, e.g., 'Hall light not working', 'Replace switches in lobby', 'Check main power fluctuations'"
+                          value={description}
+                          onChange={(e) => setDescription(e.target.value)}
+                          style={{ resize: 'none' }}
+                          required
+                        />
+                      </div>
+                      <button className="btn-primary" type="submit" style={{ width: '100%', justifyContent: 'center' }}>
+                        Send Request
+                      </button>
+                    </form>
+                  </>
+                )}
               </div>
 
               {/* Request Logs */}

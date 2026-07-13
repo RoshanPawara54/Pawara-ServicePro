@@ -38,12 +38,17 @@ public class AuthController {
         }
 
         User user = userOpt.get();
+        if (user.getCustomer() != null && "TRASHED".equals(user.getCustomer().getStatus())) {
+            return ResponseEntity.status(401).body(Map.of("message", "Your Account is no longer active.Please contact Prashansha Electical Services."));
+        }
+
         Map<String, Object> response = new HashMap<>();
         response.put("username", user.getUsername());
         response.put("role", user.getRole());
         if (user.getCustomer() != null) {
             response.put("customerId", user.getCustomer().getId());
             response.put("customerName", user.getCustomer().getName());
+            response.put("customerStatus", user.getCustomer().getStatus());
         }
         return ResponseEntity.ok(response);
     }
@@ -57,6 +62,10 @@ public class AuthController {
         }
 
         User user = userOpt.get();
+        if (user.getCustomer() != null && "TRASHED".equals(user.getCustomer().getStatus())) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Your Account is no longer active.Please contact Prashansha Electical Services."));
+        }
+
         String token = tokenProvider.generateToken(user.getUsername(), user.getRole());
 
         Map<String, Object> response = new HashMap<>();
@@ -66,6 +75,7 @@ public class AuthController {
         if (user.getCustomer() != null) {
             response.put("customerId", user.getCustomer().getId());
             response.put("customerName", user.getCustomer().getName());
+            response.put("customerStatus", user.getCustomer().getStatus());
         }
 
         return ResponseEntity.ok(response);
