@@ -591,7 +591,7 @@ export default function CustomerManagement() {
             <div style={{ fontSize: '0.85rem', textAlign: 'left', lineHeight: '1.6' }}>
               <strong style={{ display: 'block', fontSize: '0.9rem', marginBottom: '6px' }}>Bank Details :</strong>
               <div><strong>Bank Name</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: Panjab National Bank</div>
-              <div><strong>A/C No.</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: 0849209000000059</div>
+              <div><strong>A/C No.</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: 0849050012971</div>
               <div><strong>Branch-IFS Code</strong> : PUNB0084920</div>
             </div>
 
@@ -989,7 +989,7 @@ export default function CustomerManagement() {
                                   opacity: b.status === 'UNPAID' ? 0.6 : 1
                                 }}
                               >
-                                {b.status === 'UNPAID' ? '🔒 Paid' : '✓ Approve Paid'}
+                                {b.status === 'UNPAID' ? '🔒 Paid' : '✓'}
                               </button>
                             )}
                             {b.status === 'PAID' && (
@@ -1015,16 +1015,18 @@ export default function CustomerManagement() {
                               title="View Invoice"
                               style={{ padding: '6px 10px', color: 'var(--color-primary)', borderColor: 'rgba(99, 102, 241, 0.2)', background: 'rgba(99, 102, 241, 0.05)' }}
                             >
-                              👁️ View
+                              View
                             </button>
-                            <button 
-                              className="btn-secondary btn-small"
-                              onClick={() => handleEditMaterialBillClick(b)}
-                              title="Edit Invoice"
-                              style={{ padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                            >
-                              <Edit size={14} />
-                            </button>
+                            {b.status !== 'PAID' && (
+                              <button 
+                                className="btn-secondary btn-small"
+                                onClick={() => handleEditMaterialBillClick(b)}
+                                title="Edit Invoice"
+                                style={{ padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                              >
+                                <Edit size={14} />
+                              </button>
+                            )}
                             <button 
                               className="btn-danger btn-small"
                               onClick={() => handleDeleteBill(b.id)}

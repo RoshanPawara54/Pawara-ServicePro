@@ -162,6 +162,9 @@ public class BillController {
         }
 
         Bill bill = billOpt.get();
+        if ("PENDING_APPROVAL".equals(bill.getStatus())) {
+            bill.setStatus("UNPAID");
+        }
         bill.setCustomerName(request.getCustomerName());
         bill.setCustomerAddress(request.getCustomerAddress());
         bill.setLabourCharge(request.getLabourCharge() != null ? request.getLabourCharge() : BigDecimal.ZERO);

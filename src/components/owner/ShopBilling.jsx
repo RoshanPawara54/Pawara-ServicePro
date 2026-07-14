@@ -656,7 +656,7 @@ export default function ShopBilling() {
               <div style={{ fontSize: '0.85rem', textAlign: 'left', lineHeight: '1.6' }}>
                 <strong style={{ display: 'block', fontSize: '0.9rem', marginBottom: '6px' }}>Bank Details :</strong>
                 <div><strong>Bank Name</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: Panjab National Bank</div>
-                <div><strong>A/C No.</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: 0849209000000059</div>
+                <div><strong>A/C No.</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: 0849050012971</div>
                 <div><strong>Branch-IFS Code</strong> : PUNB0084920</div>
               </div>
 
@@ -699,15 +699,15 @@ export default function ShopBilling() {
                     <tr key={b.id}>
                       <td>{new Date(b.createdAt).toLocaleDateString()}</td>
                       <td>
-                        <strong style={{ color: 'var(--text-main)' }}>{b.billNumber}</strong>
+                        <strong style={{ color: 'var(--text-main)' }}>{b.billType === 'SHOP_QUOTATION' ? '-' : b.id}</strong>
                       </td>
                       <td>
                         <span className="badge" style={{
-                          background: b.billType === 'SHOP_QUOTATION' ? 'rgba(99,102,241,0.08)' : 'rgba(139,92,246,0.08)',
-                          color: b.billType === 'SHOP_QUOTATION' ? '#4f46e5' : '#4c1d95',
-                          border: b.billType === 'SHOP_QUOTATION' ? '1px solid rgba(99,102,241,0.2)' : '1px solid rgba(139,92,246,0.2)'
+                          background: b.businessName === 'PAWARA_ELECTRICAL' ? 'rgba(139,92,246,0.08)' : 'rgba(225,29,72,0.08)',
+                          color: b.businessName === 'PAWARA_ELECTRICAL' ? '#4c1d95' : '#be123c',
+                          border: b.businessName === 'PAWARA_ELECTRICAL' ? '1px solid rgba(139,92,246,0.2)' : '1px solid rgba(225,29,72,0.2)'
                         }}>
-                          {b.billType === 'SHOP_QUOTATION' ? 'QUOTATION' : 'BILL'}
+                          {b.businessName === 'PAWARA_ELECTRICAL' ? 'Pawara Ele' : 'Prashansha Ele'}
                         </span>
                       </td>
                       <td>{b.customerName || 'Walk-In'}</td>
