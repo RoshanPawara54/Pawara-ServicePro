@@ -180,18 +180,6 @@ export default function Login() {
             {loading ? <Loader size={20} className="spin" /> : 'Sign In'}
           </button>
         </form>
-
-        <div style={{
-          marginTop: '30px',
-          paddingTop: '20px',
-          borderTop: '1px solid rgba(255, 255, 255, 0.05)',
-          fontSize: '0.8rem',
-          color: 'var(--text-muted)',
-          textAlign: 'center'
-        }}>
-          <div>Default Admin: <strong>admin</strong> / <strong>123</strong></div>
-          <div style={{ marginTop: '4px' }}>Customer Demo: <strong>saihospital</strong> / <strong>123</strong></div>
-        </div>
       </div>
 
       {/* Forgot Password Modal */}

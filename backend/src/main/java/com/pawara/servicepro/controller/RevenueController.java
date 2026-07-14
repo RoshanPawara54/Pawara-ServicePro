@@ -34,7 +34,7 @@ public class RevenueController {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal totalMaterialBillRevenue = bills.stream()
-                .filter(b -> "MAINTENANCE_MATERIAL_BILL".equalsIgnoreCase(b.getBillType()))
+                .filter(b -> "MAINTENANCE_MATERIAL_BILL".equalsIgnoreCase(b.getBillType()) && "PAID".equalsIgnoreCase(b.getStatus()))
                 .map(Bill::getTotalAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -46,7 +46,7 @@ public class RevenueController {
         BigDecimal totalRevenue = totalShopRevenue.add(totalMaterialBillRevenue).add(totalContractRevenue);
 
         BigDecimal totalMaterialCost = bills.stream()
-                .filter(b -> "SHOP_BILL".equalsIgnoreCase(b.getBillType()) || "MAINTENANCE_MATERIAL_BILL".equalsIgnoreCase(b.getBillType()))
+                .filter(b -> "SHOP_BILL".equalsIgnoreCase(b.getBillType()) || ("MAINTENANCE_MATERIAL_BILL".equalsIgnoreCase(b.getBillType()) && "PAID".equalsIgnoreCase(b.getStatus())))
                 .map(b -> b.getMaterialCost() != null ? b.getMaterialCost() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -66,9 +66,12 @@ public class RevenueController {
             String monthKey = bill.getCreatedAt().format(monthFormatter);
             if (monthlyMap.containsKey(monthKey)) {
                 MonthlyData data = monthlyMap.get(monthKey);
-                data.revenue = data.revenue.add(bill.getTotalAmount());
-                data.cost = data.cost.add(bill.getMaterialCost() != null ? bill.getMaterialCost() : BigDecimal.ZERO);
-                data.profit = data.revenue.subtract(data.cost);
+                if ("SHOP_BILL".equalsIgnoreCase(bill.getBillType()) ||
+                    ("MAINTENANCE_MATERIAL_BILL".equalsIgnoreCase(bill.getBillType()) && "PAID".equalsIgnoreCase(bill.getStatus()))) {
+                    data.revenue = data.revenue.add(bill.getTotalAmount());
+                    data.cost = data.cost.add(bill.getMaterialCost() != null ? bill.getMaterialCost() : BigDecimal.ZERO);
+                    data.profit = data.revenue.subtract(data.cost);
+                }
             }
         }
 

@@ -32,3 +32,10 @@ backend/*.iml
 backend/.idea/
 dependency-reduced-pom.xml
 
+# Environment variables (secrets - never commit)
+.env
+.env.*
+
+# Project notes (local only)
+PROJECT_OVERVIEW.txt
+
