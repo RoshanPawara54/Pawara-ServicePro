@@ -154,6 +154,7 @@ public class BillController {
     }
 
     @PutMapping("/api/owner/bills/{id}")
+    @org.springframework.transaction.annotation.Transactional
     public ResponseEntity<?> updateBill(@PathVariable Long id, @RequestBody BillCreationRequest request) {
         Optional<Bill> billOpt = billRepository.findById(id);
         if (billOpt.isEmpty()) {
@@ -174,8 +175,10 @@ public class BillController {
             }
         }
 
-        billItemRepository.deleteAllInBatch(bill.getItems());
+        // Clear existing items and flush orphan removal first to prevent stale state exceptions
         bill.getItems().clear();
+        billRepository.saveAndFlush(bill);
+
         BigDecimal aggregateCost = BigDecimal.ZERO;
         BigDecimal aggregateTotal = BigDecimal.ZERO;
 

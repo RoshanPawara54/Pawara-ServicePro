@@ -408,24 +408,30 @@ h6 {
   .print-sheet, .print-sheet * {
     visibility: visible;
   }
-  .print-sheet {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
+  html, body, #root, .layout-container, .main-content, .glass-card {
+    display: block !important;
+    position: static !important;
+    transform: none !important;
     margin: 0 !important;
     padding: 0 !important;
-    background: #fff !important;
-    color: #000 !important;
-  }
-  body, html {
-    background: #fff !important;
-    color: #000 !important;
-    display: block !important;
     height: auto !important;
     min-height: auto !important;
+    width: auto !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    overflow: visible !important;
+  }
+  .print-sheet {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
     margin: 0 !important;
-    padding: 0 !important;
+    padding: 30px !important;
+    background: #fff !important;
+    color: #000 !important;
+    box-sizing: border-box !important;
   }
 }
 
