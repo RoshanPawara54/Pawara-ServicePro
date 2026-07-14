@@ -63,6 +63,17 @@ export default function ShopBilling() {
       
       // Filter out maintenance material bills so we only show shop bills/quotations in the history here
       const shopInvoices = res.data.filter(b => b.billType === 'SHOP_BILL' || b.billType === 'SHOP_QUOTATION');
+      
+      // Sort by date (latest first)
+      shopInvoices.sort((a, b) => {
+        const dateA = new Date(a.createdAt);
+        const dateB = new Date(b.createdAt);
+        if (dateA.getTime() !== dateB.getTime()) {
+          return dateB.getTime() - dateA.getTime();
+        }
+        return b.id - a.id;
+      });
+
       setPastBills(shopInvoices);
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Error occurred');

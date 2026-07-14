@@ -14,7 +14,8 @@ import {
   KeyRound,
   ShieldCheck,
   CheckSquare,
-  Printer
+  Printer,
+  Edit
 } from 'lucide-react';
 
 export default function CustomerManagement() {
@@ -75,6 +76,8 @@ export default function CustomerManagement() {
   const [billItems, setBillItems] = useState([
     { itemName: '', quantity: '1', unitPrice: '0', unitCost: '0' }
   ]);
+  const [editingBillId, setEditingBillId] = useState(null);
+  const [editingBillNumber, setEditingBillNumber] = useState('');
 
   const [activeBillDetail, setActiveBillDetail] = useState(null);
 
@@ -256,6 +259,33 @@ export default function CustomerManagement() {
     }
   };
 
+  const resetMaterialBillForm = () => {
+    setShowMaterialBillModal(false);
+    setSelectedRequestForBill(null);
+    setEditingBillId(null);
+    setEditingBillNumber('');
+    setLabourCharge('200');
+    setBillItems([{ itemName: '', quantity: '1', unitPrice: '0', unitCost: '0' }]);
+  };
+
+  const handleEditMaterialBillClick = (bill) => {
+    setEditingBillId(bill.id);
+    setEditingBillNumber(bill.billNumber);
+    setLabourCharge(bill.labourCharge ? bill.labourCharge.toString() : '0');
+    if (bill.items && bill.items.length > 0) {
+      setBillItems(bill.items.map(item => ({
+        itemName: item.itemName,
+        quantity: item.quantity.toString(),
+        unitPrice: item.unitPrice.toString(),
+        unitCost: item.unitCost ? item.unitCost.toString() : '0'
+      })));
+    } else {
+      setBillItems([{ itemName: '', quantity: '1', unitPrice: '0', unitCost: '0' }]);
+    }
+    setSelectedRequestForBill(bill.maintenanceRequest || null);
+    setShowMaterialBillModal(true);
+  };
+
   const handleCreateMaterialBill = async (e) => {
     e.preventDefault();
     if (billItems.some(item => !item.itemName || parseFloat(item.quantity) <= 0 || parseFloat(item.unitPrice) < 0)) {
@@ -264,25 +294,31 @@ export default function CustomerManagement() {
     }
 
     try {
-      const res = await api.post('/api/owner/bills', {
+      const payload = {
         billType: 'MAINTENANCE_MATERIAL_BILL',
         customerId: selectedCustomerId,
-        maintenanceRequestId: selectedRequestForBill.id,
+        maintenanceRequestId: selectedRequestForBill ? selectedRequestForBill.id : null,
         labourCharge: parseFloat(labourCharge) || 0,
-        status: 'UNPAID',
         items: billItems.map(item => ({
           itemName: item.itemName,
           quantity: parseFloat(item.quantity) || 0,
           unitPrice: parseFloat(item.unitPrice) || 0,
           unitCost: parseFloat(item.unitCost) || 0
         }))
-      });
-      
-      setSuccess(`Material Bill generated successfully: ${res.data.billNumber}. Request marked as completed.`);
-      setShowMaterialBillModal(false);
-      setSelectedRequestForBill(null);
-      setBillItems([{ itemName: '', quantity: '1', unitPrice: '0', unitCost: '0' }]);
-      
+      };
+
+      if (editingBillId) {
+        const currentBill = bills.find(b => b.id === editingBillId);
+        payload.status = currentBill ? currentBill.status : 'UNPAID';
+        const res = await api.put(`/api/owner/bills/${editingBillId}`, payload);
+        setSuccess(`Material Bill updated successfully: ${res.data.billNumber}`);
+      } else {
+        payload.status = 'UNPAID';
+        const res = await api.post('/api/owner/bills', payload);
+        setSuccess(`Material Bill generated successfully: ${res.data.billNumber}. Request marked as completed.`);
+      }
+
+      resetMaterialBillForm();
       handleSelectCustomer(selectedCustomerId);
     } catch (err) {
       setError(err.response?.data?.message || err.message);
@@ -982,12 +1018,20 @@ export default function CustomerManagement() {
                               👁️ View
                             </button>
                             <button 
+                              className="btn-secondary btn-small"
+                              onClick={() => handleEditMaterialBillClick(b)}
+                              title="Edit Invoice"
+                              style={{ padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            >
+                              <Edit size={14} />
+                            </button>
+                            <button 
                               className="btn-danger btn-small"
                               onClick={() => handleDeleteBill(b.id)}
                               title="Delete Invoice"
-                              style={{ padding: '6px 10px' }}
+                              style={{ padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                             >
-                              🗑️ Delete
+                              🗑️
                             </button>
                           </div>
                         </td>
@@ -1213,12 +1257,16 @@ export default function CustomerManagement() {
       )}
 
       {/* Generate Material Bill Modal */}
-      {showMaterialBillModal && selectedRequestForBill && (
+      {showMaterialBillModal && (selectedRequestForBill || editingBillId) && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div className="glass-card" style={{ width: '100%', maxWidth: '650px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h3 style={{ marginBottom: '10px' }}>Generate Material Bill</h3>
+            <h3 style={{ marginBottom: '10px' }}>{editingBillId ? 'Edit Material Bill' : 'Generate Material Bill'}</h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '20px' }}>
-              Creating invoice for maintenance task: <strong>"{selectedRequestForBill.description}"</strong>
+              {editingBillId ? (
+                `Editing material invoice: ${editingBillNumber}`
+              ) : (
+                `Creating invoice for maintenance task: "${selectedRequestForBill?.description}"`
+              )}
             </p>
 
             <form onSubmit={handleCreateMaterialBill}>
@@ -1258,8 +1306,8 @@ export default function CustomerManagement() {
               </div>
 
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '30px' }}>
-                <button type="button" className="btn-secondary" onClick={() => { setShowMaterialBillModal(false); setSelectedRequestForBill(null); }}>Cancel</button>
-                <button type="submit" className="btn-primary">Generate Invoice</button>
+                <button type="button" className="btn-secondary" onClick={resetMaterialBillForm}>Cancel</button>
+                <button type="submit" className="btn-primary">{editingBillId ? 'Update Invoice' : 'Generate Invoice'}</button>
               </div>
             </form>
           </div>
