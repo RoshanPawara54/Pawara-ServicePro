@@ -68,7 +68,7 @@ export default function ActivityLogHistory() {
             {activities.map((act) => {
               const dt = new Date(act.createdAt);
               return (
-                <div key={act.id} style={{
+                <div key={act.id} className="activity-log-card" style={{
                   background: 'rgba(0, 0, 0, 0.02)',
                   border: '1px solid rgba(0, 0, 0, 0.05)',
                   borderRadius: '10px',
@@ -85,7 +85,7 @@ export default function ActivityLogHistory() {
                       Performed by: <strong style={{ color: 'var(--text-main)' }}>{act.performedBy}</strong> | Type: {act.activityType}
                     </div>
                   </div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'right' }}>
+                  <div className="activity-log-date" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'right' }}>
                     <div>{dt.toLocaleDateString()}</div>
                     <div style={{ fontSize: '0.75rem', marginTop: '2px' }}>
                       {dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

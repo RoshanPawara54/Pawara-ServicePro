@@ -64,6 +64,8 @@ h6 {
   padding: 24px;
   transition: var(--transition-smooth);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .glass-card:hover {
@@ -226,6 +228,9 @@ h6 {
   color: var(--text-main);
   font-size: 0.95rem;
   text-align: center;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  max-width: 200px;
 }
 
 .data-table td.actions-cell,
@@ -623,3 +628,361 @@ h6 {
 .spin {
   animation: spin 1s linear infinite;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MOBILE UI — ADMIN & CUSTOMER  (max-width: 768px ONLY)
+   Every rule below is inside the media query or a "hidden-by-default" guard.
+   Zero changes to desktop layout.
+══════════════════════════════════════════════════════════════════════════ */
+
+/* Hidden on desktop by default; shown inside @media below */
+.mobile-top-search    { display: none; }
+.mobile-footer-nav    { display: none; }
+.customer-mobile-footer { display: none; }
+.mobile-profile-overlay { display: none; }
+
+/* Profile section is mobile-only — never shown on desktop */
+.customer-profile-section { display: none; }
+
+@media (max-width: 768px) {
+
+  /* ── Hide desktop welcome header + search bar in OwnerDashboard ── */
+  .desktop-header-only { display: none !important; }
+
+  /* ──────────────────────────────────────────────────────────────────
+     ADMIN MOBILE TOP SEARCH BAR
+  ────────────────────────────────────────────────────────────────── */
+  .mobile-top-search {
+    display: flex !important;
+    align-items: center;
+    padding: 10px 16px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--card-border);
+    position: relative;
+    z-index: 100;
+    flex-shrink: 0;
+  }
+
+  .mobile-search-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    background: #ffffff;
+    border: 1px solid rgba(17,17,17,0.15);
+    border-radius: 8px;
+    padding: 9px 12px;
+  }
+
+  .mobile-search-input {
+    border: none;
+    outline: none;
+    flex: 1;
+    font-size: 0.9rem;
+    background: transparent;
+    color: var(--text-main);
+    font-family: var(--font-body);
+  }
+
+  .mobile-search-clear {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    padding: 0;
+  }
+
+  .mobile-search-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 16px;
+    right: 16px;
+    background: #ffffff;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    z-index: 999;
+    max-height: 280px;
+    overflow-y: auto;
+  }
+
+  .mobile-search-item {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    cursor: pointer;
+    gap: 2px;
+  }
+  .mobile-search-item:last-child { border-bottom: none; }
+  .mobile-search-item:active     { background: #f9f8f3; }
+
+  .mobile-search-item-type {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+  }
+  .mobile-search-item-title {
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text-main);
+  }
+  .mobile-search-item-sub {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ──────────────────────────────────────────────────────────────────
+     MOBILE FOOTER TAB BAR  (Admin 5-tab + Customer 3-tab share styles)
+  ────────────────────────────────────────────────────────────────── */
+  .mobile-footer-nav,
+  .customer-mobile-footer {
+    display: flex !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 62px;
+    background: #ffffff;
+    border-top: 1px solid var(--card-border);
+    z-index: 500;
+    align-items: stretch;
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.06);
+  }
+
+  .mobile-footer-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: #999999;
+    font-family: var(--font-body);
+    transition: color 0.2s;
+    padding: 6px 2px;
+  }
+  .mobile-footer-tab.active { color: #111111; }
+  .mobile-footer-tab span   { font-size: 0.62rem; line-height: 1; }
+
+  /* Extra bottom padding so content clears the fixed footer */
+  .main-content { padding-bottom: 80px !important; }
+
+  /* ──────────────────────────────────────────────────────────────────
+     ADMIN MOBILE PROFILE SLIDE-UP PANEL
+  ────────────────────────────────────────────────────────────────── */
+  .mobile-profile-overlay {
+    display: flex !important;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  .mobile-profile-panel {
+    background: var(--bg-primary);
+    width: 100%;
+    max-height: 88vh;
+    border-radius: 20px 20px 0 0;
+    overflow-y: auto;
+    padding: 24px 20px 44px;
+    position: relative;
+    animation: slideUpPanel 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes slideUpPanel {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+
+  .mobile-profile-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(0,0,0,0.07);
+    border: none;
+    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-muted);
+  }
+
+  .mobile-profile-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 0 28px;
+    gap: 8px;
+  }
+
+  .mobile-profile-avatar {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #111111 0%, #444444 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 6px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  }
+
+  .mobile-profile-name {
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: var(--text-main);
+    font-family: var(--font-title);
+    letter-spacing: -0.02em;
+    text-align: center;
+  }
+
+  .mobile-profile-role {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    text-align: center;
+  }
+
+  .mobile-profile-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .mobile-stat-card {
+    background: #ffffff;
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  }
+
+  .mobile-stat-value {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--text-main);
+    font-family: var(--font-title);
+    line-height: 1;
+  }
+
+  .mobile-stat-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    text-align: right;
+    max-width: 60%;
+    line-height: 1.35;
+  }
+
+  .mobile-profile-logout {
+    width: 100%;
+    padding: 14px;
+    background: #fff0f3;
+    border: 1px solid rgba(225,29,72,0.2);
+    border-radius: 12px;
+    color: var(--color-danger);
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: var(--font-body);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.2s;
+  }
+  .mobile-profile-logout:active { background: rgba(225,29,72,0.1); }
+
+  /* ──────────────────────────────────────────────────────────────────
+     CUSTOMER PORTAL MOBILE TABS
+  ────────────────────────────────────────────────────────────────── */
+
+  /* Portal title — smaller on mobile */
+  .portal-title { font-size: 1.1rem !important; }
+
+  /* Contract banner hidden on mobile (shown in Profile tab) */
+  .customer-contract-banner { display: none !important; }
+
+  /* Home and Bills tab sections — hidden until their tab is active */
+  .customer-home-section  { display: none !important; }
+  .customer-bills-section { display: none !important; }
+
+  .customer-home-section.tab-active  { display: flex !important; flex-direction: column; gap: 20px; }
+  .customer-bills-section.tab-active { display: flex !important; flex-direction: column; gap: 20px; }
+
+  /* Profile section — hidden until profile tab active */
+  .customer-profile-section { display: none !important; }
+  .customer-profile-section.tab-active {
+    display: flex !important;
+    flex-direction: column;
+    gap: 16px;
+    padding-bottom: 10px;
+  }
+
+  /* ──────────────────────────────────────────────────────────────────
+     T1: CENTER LOADING SPINNER + TEXT ON MOBILE (full viewport center)
+     We target the wrapper div that contains .spin-loader, making it
+     fill the available space and flex-center its children.
+     The .spin-loader itself keeps its original transform/animation.
+  ────────────────────────────────────────────────────────────────── */
+  .main-content > div:has(.spin-loader) {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: calc(100vh - 130px) !important;
+    padding: 0 20px !important;
+  }
+
+  /* ──────────────────────────────────────────────────────────────────
+     T3: ACTIVITY HISTORY — date/time on top, details below
+  ────────────────────────────────────────────────────────────────── */
+  .activity-log-card {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+  .activity-log-date {
+    order: -1 !important;
+    text-align: left !important;
+    width: 100% !important;
+    display: flex !important;
+    gap: 6px !important;
+    align-items: center !important;
+    font-size: 0.78rem !important;
+    color: var(--text-muted) !important;
+    padding-bottom: 4px !important;
+    border-bottom: 1px solid rgba(0,0,0,0.05) !important;
+    margin-bottom: 2px !important;
+  }
+
+  /* ──────────────────────────────────────────────────────────────────
+     T4: FOOTER TAB BAR — icon-only (reduced height)
+  ────────────────────────────────────────────────────────────────── */
+  .mobile-footer-nav,
+  .customer-mobile-footer {
+    height: 52px !important;
+  }
+  .main-content { padding-bottom: 68px !important; }
+}

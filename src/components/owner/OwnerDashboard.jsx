@@ -279,7 +279,7 @@ export default function OwnerDashboard() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '20px' }}>
+      <div className="desktop-header-only" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '20px' }}>
         <div>
           <h1>Welcome, Jankiram</h1>
           <p style={{ color: 'var(--text-muted)' }}>Daily business operations summary for Pawara ServicePro</p>

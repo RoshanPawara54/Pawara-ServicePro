@@ -107,6 +107,16 @@ public class RequestController {
         return ResponseEntity.ok(updatedRequest);
     }
 
+    @DeleteMapping("/api/owner/requests/{id}")
+    public ResponseEntity<?> deleteRequest(@PathVariable Long id) {
+        Optional<MaintenanceRequest> requestOpt = requestRepository.findById(id);
+        if (requestOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        requestRepository.deleteById(id);
+        return ResponseEntity.ok(Map.of("message", "Maintenance request deleted successfully"));
+    }
+
     @Data
     public static class RequestCreationRequest {
         private String description;
