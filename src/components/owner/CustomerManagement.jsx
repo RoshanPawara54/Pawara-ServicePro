@@ -15,7 +15,8 @@ import {
   ShieldCheck,
   CheckSquare,
   Printer,
-  Edit
+  Edit,
+  ArrowLeft
 } from 'lucide-react';
 
 export default function CustomerManagement() {
@@ -55,6 +56,16 @@ export default function CustomerManagement() {
   const [endDate, setEndDate] = useState(new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]);
   const [monthlyPaymentAmount, setMonthlyPaymentAmount] = useState('5000');
   const [monthlyPaymentDueDate, setMonthlyPaymentDueDate] = useState('5');
+
+  // Edit customer details states (t2)
+  const [showEditCustomerModal, setShowEditCustomerModal] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editCustomerType, setEditCustomerType] = useState('Hospital');
+  const [editContactPerson, setEditContactPerson] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editAddress, setEditAddress] = useState('');
+  const [editUsername, setEditUsername] = useState('');
 
   // Modal / reset states
   const [showResetModal, setShowResetModal] = useState(false);
@@ -218,6 +229,40 @@ export default function CustomerManagement() {
       setSuccess(`Password updated successfully to "${resetPasswordVal}"`);
       setShowResetModal(false);
       setResetPasswordVal('123');
+    } catch (err) {
+      setError(err.response?.data?.message || err.message);
+    }
+  };
+
+  const handleOpenEditCustomer = () => {
+    if (!profile) return;
+    setEditName(profile.name || '');
+    setEditCustomerType(profile.customerType || 'Hospital');
+    setEditContactPerson(profile.contactPerson || '');
+    setEditPhone(profile.phone || '');
+    setEditEmail(profile.email || '');
+    setEditAddress(profile.address || '');
+    setEditUsername(credentials?.username || '');
+    setShowEditCustomerModal(true);
+  };
+
+  const handleEditCustomerSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        name: editName,
+        customerType: editCustomerType,
+        contactPerson: editContactPerson,
+        phone: editPhone,
+        email: editEmail,
+        address: editAddress,
+        username: editUsername
+      };
+      await api.put(`/api/owner/customers/${selectedCustomerId}`, payload);
+      setSuccess('Customer details updated successfully!');
+      setShowEditCustomerModal(false);
+      handleSelectCustomer(selectedCustomerId);
+      fetchCustomers();
     } catch (err) {
       setError(err.response?.data?.message || err.message);
     }
@@ -612,22 +657,57 @@ export default function CustomerManagement() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <div>
-          <h1>Maintenance Customers Management</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Configure details, contracts, bills, and payments for Prashansa Electrical Services</p>
+      {/* ── HEADER (Directory vs Profile View) ── */}
+      {!selectedCustomerId ? (
+        <div className="maintenance-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+          <div>
+            <h1>
+              <span className="desktop-heading-text">Maintenance Customers Management</span>
+              <span className="mobile-heading-text">Maintenance Customers</span>
+            </h1>
+            <p style={{ color: 'var(--text-muted)' }}>Configure details, contracts, bills, and payments for Prashansa Electrical Services</p>
+          </div>
+          {!showAddForm && (
+            <button className="btn-primary desktop-header-add-btn" onClick={() => setShowAddForm(true)}>
+              <UserPlus size={18} /> Add Customer
+            </button>
+          )}
         </div>
-        {!selectedCustomerId && !showAddForm && (
-          <button className="btn-primary" onClick={() => setShowAddForm(true)}>
-            <UserPlus size={18} /> Add Customer
-          </button>
-        )}
-        {selectedCustomerId && (
-          <button className="btn-secondary" onClick={() => navigate('/maintenance')}>
-            ← Back to Directory
-          </button>
-        )}
-      </div>
+      ) : profile ? (
+        <div className="maintenance-profile-header" style={{ marginBottom: '22px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'nowrap' }}>
+            <button
+              type="button"
+              onClick={() => navigate('/maintenance')}
+              title="Back to Directory"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '0',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--text-main)',
+                flexShrink: 0
+              }}
+            >
+              <ArrowLeft size={28} strokeWidth={2.4} />
+            </button>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
+              <h1 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {profile.name}
+              </h1>
+              {credentials && (
+                <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                  Portal Login: <strong style={{ color: 'var(--text-main)' }}>{credentials.username}</strong>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {success && (
         <div style={{
@@ -741,41 +821,63 @@ export default function CustomerManagement() {
 
       {/* 2. Customer Profile Details View */}
       {selectedCustomerId && profile && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
-          {/* Header Card */}
-          <div className="glass-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', flexWrap: 'wrap', gap: '20px' }}>
-            <div>
-              <span className="badge badge-quotation" style={{ marginBottom: '8px' }}>
-                {profile.customerType} Type
-              </span>
-              <h2>{profile.name}</h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '4px' }}>
-                Contact Person: <strong>{profile.contactPerson || 'N/A'}</strong> | Phone: {profile.phone || 'N/A'} | Email: {profile.email || 'N/A'}
-              </p>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '4px' }}>
-                Address: {profile.address || 'N/A'}
-              </p>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'flex-end' }}>
-              {credentials && (
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                  Portal Login: <strong style={{ color: 'var(--text-main)' }}>{credentials.username}</strong>
-                </div>
-              )}
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button className="btn-secondary btn-small" onClick={() => setShowResetModal(true)}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
+          {/* Customer Info Card with clean alignment and Edit button (t2) */}
+          <div className="glass-card profile-info-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px', marginBottom: '18px', borderBottom: '1px solid var(--card-border)', paddingBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span className="badge badge-quotation">
+                  {profile.customerType} Type
+                </span>
+                <span className={`badge ${(profile.status || 'ACTIVE') === 'INACTIVE' ? 'badge-unpaid' : 'badge-completed'}`}>
+                  {profile.status || 'ACTIVE'}
+                </span>
+              </div>
+
+              {/* Action Buttons: Reset Pass, Edit, Record Payment */}
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <button className="btn-secondary btn-small" onClick={() => setShowResetModal(true)} title="Reset Login Password">
                   <KeyRound size={14} /> Reset Pass
+                </button>
+                <button className="btn-secondary btn-small" onClick={handleOpenEditCustomer} title="Edit Customer Details">
+                  <Edit size={14} /> Edit
                 </button>
                 <button className="btn-primary btn-small" onClick={() => setShowPaymentModal(true)}>
                   <CreditCard size={14} /> Record Payment
                 </button>
               </div>
             </div>
+
+            {/* Cleanly Aligned Info Grid (t2) */}
+            <div className="profile-info-grid">
+              <div className="profile-info-item">
+                <span className="profile-info-label">Contact Person</span>
+                <span className="profile-info-value">{profile.contactPerson || '-'}</span>
+              </div>
+              <div className="profile-info-item">
+                <span className="profile-info-label">Phone</span>
+                <span className="profile-info-value">{profile.phone || '-'}</span>
+              </div>
+              <div className="profile-info-item">
+                <span className="profile-info-label">Email</span>
+                <span className="profile-info-value">{profile.email || '-'}</span>
+              </div>
+              <div className="profile-info-item">
+                <span className="profile-info-label">Portal Login</span>
+                <span className="profile-info-value">
+                  {credentials?.username ? `@${credentials.username}` : '-'}
+                </span>
+              </div>
+              <div className="profile-info-item full-width">
+                <span className="profile-info-label">Address</span>
+                <span className="profile-info-value">{profile.address || '-'}</span>
+              </div>
+            </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', alignItems: 'start' }}>
-            {/* Contract Info & Payments logs */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '25px', alignItems: 'start' }}>
+            {/* Left Column: Customer Status, Contract Status, Recent Payments (t3) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
               {/* Customer Status Card */}
               <div className="glass-card">
                 <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', borderBottom: '1px solid rgba(0,0,0,0.08)', paddingBottom: '10px' }}>
@@ -846,47 +948,63 @@ export default function CustomerManagement() {
                 )}
               </div>
 
-              {/* Payments History Card */}
+              {/* Payments History Card — Activity History Layout (t3) */}
               <div className="glass-card">
                 <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', borderBottom: '1px solid rgba(0,0,0,0.08)', paddingBottom: '10px' }}>
                   Recent Payments Log
                 </h3>
-                <div className="data-table-container">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Date</th>
-                        <th>Type</th>
-                        <th>Amount</th>
-                        <th>Notes</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {payments.length > 0 ? (
-                        payments.map((p) => (
-                          <tr key={p.id}>
-                            <td>{new Date(p.paymentDate).toLocaleDateString()}</td>
-                            <td style={{ fontSize: '0.8rem' }}>
-                              {p.paymentType === 'CONTRACT_PAYMENT' ? '📅 Contract' : '🔧 Materials'}
-                            </td>
-                            <td>₹{p.amount.toFixed(2)}</td>
-                            <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{p.notes || '-'}</td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan="4" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '15px' }}>
-                            No logged payments found.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                {payments.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {payments.map((p) => {
+                      const dt = new Date(p.paymentDate);
+                      const isContract = p.paymentType === 'CONTRACT_PAYMENT';
+                      return (
+                        <div key={p.id} className="payment-log-card" style={{
+                          background: 'rgba(0, 0, 0, 0.02)',
+                          border: '1px solid rgba(0, 0, 0, 0.06)',
+                          borderRadius: '12px',
+                          padding: '14px 16px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          gap: '12px'
+                        }}>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                              <span className="badge" style={{
+                                fontSize: '0.72rem',
+                                padding: '2px 8px',
+                                background: isContract ? 'rgba(5, 150, 105, 0.08)' : 'rgba(217, 119, 6, 0.08)',
+                                color: isContract ? '#059669' : '#d97706',
+                                border: isContract ? '1px solid rgba(5, 150, 105, 0.2)' : '1px solid rgba(217, 119, 6, 0.2)'
+                              }}>
+                                {isContract ? '📅 Contract Payment' : '🔧 Material Bill'}
+                              </span>
+                              <strong style={{ fontSize: '1rem', color: 'var(--text-main)' }}>
+                                ₹{p.amount.toFixed(2)}
+                              </strong>
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                              {p.notes ? `Note: ${p.notes}` : (p.referenceId ? `Ref ID: #${p.referenceId}` : 'Direct recorded payment')}
+                            </div>
+                          </div>
+
+                          <div className="payment-log-date" style={{ fontSize: '0.82rem', color: 'var(--text-muted)', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                            <div>{dt.toLocaleDateString()}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '25px', fontSize: '0.9rem' }}>
+                    No logged payments found.
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Maintenance Requests Card */}
+            {/* Right Column: Maintenance Requests */}
             <div className="glass-card">
               <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', borderBottom: '1px solid rgba(0,0,0,0.08)', paddingBottom: '10px' }}>
                 Maintenance Requests & Action
@@ -911,7 +1029,7 @@ export default function CustomerManagement() {
                       <p style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}>{req.description}</p>
                       
                       {req.status === 'PENDING' && (
-                        <div style={{ marginTop: '12px', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                        <div style={{ marginTop: '12px', display: 'flex', gap: '8px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                           <button 
                             className="btn-secondary btn-small"
                             onClick={() => handleCompleteRequestDirect(req.id)}
@@ -940,12 +1058,14 @@ export default function CustomerManagement() {
             </div>
           </div>
 
-          {/* Bills List Card */}
+          {/* Material Bills Generated Section (t4: desktop table, mobile cards) */}
           <div className="glass-card">
             <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', borderBottom: '1px solid rgba(0,0,0,0.08)', paddingBottom: '10px' }}>
               Material Bills Generated
             </h3>
-            <div className="data-table-container">
+
+            {/* Desktop Table View */}
+            <div className="data-table-container material-table-desktop">
               <table className="data-table">
                 <thead>
                   <tr>
@@ -973,7 +1093,7 @@ export default function CustomerManagement() {
                           </span>
                         </td>
                         <td className="actions-cell">
-                          <div style={{ display: 'flex', gap: '8px' }}>
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                             {b.status !== 'PAID' && (
                               <button 
                                 className="btn-secondary btn-small"
@@ -1013,7 +1133,7 @@ export default function CustomerManagement() {
                                 }
                               }}
                               title="View Invoice"
-                              style={{ padding: '6px 10px', color: 'var(--color-primary)', borderColor: 'rgba(99, 102, 241, 0.2)', background: 'rgba(99, 102, 241, 0.05)' }}
+                              style={{ padding: '6px 10px', color: 'var(--color-primary)' }}
                             >
                               View
                             </button>
@@ -1033,7 +1153,7 @@ export default function CustomerManagement() {
                               title="Delete Invoice"
                               style={{ padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                             >
-                              🗑️
+                              <Trash2 size={14} />
                             </button>
                           </div>
                         </td>
@@ -1049,10 +1169,107 @@ export default function CustomerManagement() {
                 </tbody>
               </table>
             </div>
+
+            {/* Mobile Material Bill Cards View (t4) */}
+            <div className="material-cards-mobile">
+              {bills.length > 0 ? (
+                bills.map((b) => (
+                  <div key={b.id} className="material-bill-card">
+                    <div className="mat-card-header">
+                      <div className="mat-card-title">
+                        <span className="mat-card-number">Bill #{b.billNumber || b.id}</span>
+                        <span className="mat-card-date">{new Date(b.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      <span className={`badge ${b.status === 'PAID' ? 'badge-completed' : (b.status === 'PENDING_APPROVAL' ? 'badge-pending' : 'badge-unpaid')}`}>
+                        {b.status === 'PENDING_APPROVAL' ? 'PENDING APPROVAL' : b.status}
+                      </span>
+                    </div>
+
+                    <div className="mat-card-body">
+                      <div className="mat-card-row">
+                        <span className="mat-card-label">Total Amount</span>
+                        <span className="mat-card-amount">₹{b.totalAmount.toFixed(2)}</span>
+                      </div>
+                      <div className="mat-card-row">
+                        <span className="mat-card-label">Labour Charge</span>
+                        <span className="mat-card-val">₹{b.labourCharge.toFixed(2)}</span>
+                      </div>
+                      <div className="mat-card-row">
+                        <span className="mat-card-label">Material Cost</span>
+                        <span className="mat-card-val">₹{b.materialCost.toFixed(2)}</span>
+                      </div>
+                    </div>
+
+                    <div className="mat-card-actions">
+                      {b.status !== 'PAID' && (
+                        <button 
+                          className="btn-secondary btn-small"
+                          onClick={() => handleMarkBillAsPaid(b.id)}
+                          disabled={b.status === 'UNPAID'}
+                          style={{ 
+                            flex: 1,
+                            justifyContent: 'center',
+                            opacity: b.status === 'UNPAID' ? 0.6 : 1
+                          }}
+                        >
+                          {b.status === 'UNPAID' ? '🔒 Paid' : '✓ Paid'}
+                        </button>
+                      )}
+                      {b.status === 'PAID' && (
+                        <button 
+                          className="btn-secondary btn-small"
+                          onClick={() => handleMarkBillAsPending(b.id)}
+                          style={{ flex: 1, justifyContent: 'center', color: 'var(--color-warning)' }}
+                        >
+                          🕒 Pending
+                        </button>
+                      )}
+                      <button 
+                        className="btn-secondary btn-small"
+                        onClick={async () => {
+                          try {
+                            const res = await api.get(`/api/owner/bills/${b.id}`);
+                            setActiveBillDetail(res.data);
+                          } catch (err) {
+                            setError('Failed to load bill detail');
+                          }
+                        }}
+                        style={{ padding: '8px 12px' }}
+                        title="View Invoice"
+                      >
+                        View
+                      </button>
+                      {b.status !== 'PAID' && (
+                        <button 
+                          className="btn-secondary btn-small"
+                          onClick={() => handleEditMaterialBillClick(b)}
+                          style={{ padding: '8px 12px' }}
+                          title="Edit Invoice"
+                        >
+                          <Edit size={14} />
+                        </button>
+                      )}
+                      <button 
+                        className="btn-danger btn-small"
+                        onClick={() => handleDeleteBill(b.id)}
+                        style={{ padding: '8px 12px' }}
+                        title="Delete Invoice"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '25px', fontSize: '0.9rem' }}>
+                  No material bills generated.
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Delete Customer Section */}
-          <div className="glass-card" style={{ border: '1px solid #fecaca', background: 'rgba(254, 226, 226, 0.15)', marginTop: '30px' }}>
+          <div className="glass-card" style={{ border: '1px solid #fecaca', background: 'rgba(254, 226, 226, 0.15)', marginTop: '20px' }}>
             <h3 style={{ color: '#dc2626', marginBottom: '15px', borderBottom: '1px solid #fee2e2', paddingBottom: '10px' }}>
               Delete Customer
             </h3>
@@ -1079,42 +1296,44 @@ export default function CustomerManagement() {
       {/* 3. Customer Directory / Grid */}
       {!selectedCustomerId && !showAddForm && (
         <div className="glass-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
-            {/* Filter Tabs */}
-            <div style={{
-              background: 'rgba(0, 0, 0, 0.04)',
-              border: '1px solid rgba(0, 0, 0, 0.08)',
-              padding: '4px',
-              borderRadius: '10px',
-              display: 'flex',
-              gap: '4px'
-            }}>
-              {['ALL', 'ACTIVE', 'INACTIVE'].map((f) => (
-                <button
-                  key={f}
-                  type="button"
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '8px',
-                    background: statusFilter === f ? '#4c1d95' : 'transparent',
-                    color: statusFilter === f ? '#ffffff' : 'var(--text-muted)',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '0.85rem',
-                    fontWeight: '500'
-                  }}
-                  onClick={() => setStatusFilter(f)}
-                >
-                  {f === 'ALL' ? 'All' : f === 'ACTIVE' ? 'Active' : 'Inactive'}
-                </button>
-              ))}
+          <div className="cust-filter-search-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
+            {/* Filter Tabs + Mobile Add Customer Button */}
+            <div className="cust-filter-tabs-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <div className="cust-filter-tabs" style={{
+                background: 'rgba(0, 0, 0, 0.04)',
+                border: '1px solid rgba(0, 0, 0, 0.08)',
+                padding: '4px',
+                borderRadius: '10px',
+                display: 'flex',
+                gap: '4px'
+              }}>
+                {['ALL', 'ACTIVE', 'INACTIVE'].map((f) => (
+                  <button
+                    key={f}
+                    type="button"
+                    className={`cust-filter-btn ${statusFilter === f ? 'active' : ''}`}
+                    onClick={() => setStatusFilter(f)}
+                  >
+                    {f === 'ALL' ? 'All' : f === 'ACTIVE' ? 'Active' : 'Inactive'}
+                  </button>
+                ))}
+              </div>
+
+              {/* Mobile Add Customer button beside All, Active, Inactive */}
+              <button
+                type="button"
+                className="btn-primary mobile-filter-add-btn"
+                onClick={() => setShowAddForm(true)}
+              >
+                <UserPlus size={15} /> Add Customer
+              </button>
             </div>
 
             {/* Search Input */}
-            <div style={{ position: 'relative', minWidth: '300px', flex: 1 }}>
-              <Search size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+            <div className="cust-search-wrapper" style={{ position: 'relative', minWidth: '240px', flex: 1 }}>
+              <Search size={18} color="var(--text-muted)" className="cust-search-icon" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
               <input 
-                className="form-input" 
+                className="form-input cust-search-input" 
                 type="text" 
                 placeholder="Search customers by name or contact person..." 
                 value={searchTerm}
@@ -1124,7 +1343,8 @@ export default function CustomerManagement() {
             </div>
           </div>
 
-          <div className="data-table-container">
+          {/* Desktop Table View */}
+          <div className="data-table-container cust-table-desktop">
             <table className="data-table">
               <thead>
                 <tr>
@@ -1195,6 +1415,69 @@ export default function CustomerManagement() {
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card View (t3) */}
+          <div className="cust-cards-mobile">
+            {loading ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px', gap: '10px' }}>
+                <div className="spin-loader" style={{ width: '24px', height: '24px', borderWidth: '3px' }} />
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Loading...</span>
+              </div>
+            ) : filteredCustomers.length > 0 ? (
+              filteredCustomers.map((cust) => (
+                <div key={cust.id} className="cust-card-item">
+                  <div className="cust-card-header">
+                    <div className="cust-card-name-group">
+                      <span className="cust-card-name">{cust.name}</span>
+                      {cust.customerType && (
+                        <span className="badge" style={{ fontSize: '0.7rem', padding: '2px 8px', background: 'rgba(0,0,0,0.04)', color: 'var(--text-muted)', border: '1px solid var(--card-border)' }}>
+                          {cust.customerType}
+                        </span>
+                      )}
+                    </div>
+                    <span className={`badge ${(cust.status || 'ACTIVE') === 'INACTIVE' ? 'badge-unpaid' : 'badge-completed'}`}>
+                      {cust.status || 'ACTIVE'}
+                    </span>
+                  </div>
+
+                  <div className="cust-card-body">
+                    {cust.contactPerson && (
+                      <div className="cust-card-row">
+                        <span className="cust-card-label">Contact</span>
+                        <span className="cust-card-value">{cust.contactPerson}</span>
+                      </div>
+                    )}
+                    {cust.phone && (
+                      <div className="cust-card-row">
+                        <span className="cust-card-label">Phone</span>
+                        <span className="cust-card-value">{cust.phone}</span>
+                      </div>
+                    )}
+                    {cust.email && (
+                      <div className="cust-card-row">
+                        <span className="cust-card-label">Email</span>
+                        <span className="cust-card-value">{cust.email}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="cust-card-actions">
+                    <button 
+                      className="btn-primary btn-small" 
+                      style={{ width: '100%', justifyContent: 'center' }}
+                      onClick={() => navigate('/maintenance/' + cust.id)}
+                    >
+                      Open Profile
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '30px', fontSize: '0.9rem' }}>
+                No customers found matching search criteria.
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1315,6 +1598,73 @@ export default function CustomerManagement() {
           </div>
         </div>
       )}
+      {/* Edit Customer Modal (t2) */}
+      {showEditCustomerModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
+          <div className="glass-card" style={{ width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid var(--card-border)', paddingBottom: '12px' }}>
+              <h3 style={{ margin: 0 }}>Edit Customer Details</h3>
+              <button 
+                type="button" 
+                className="btn-secondary btn-small"
+                onClick={() => setShowEditCustomerModal(false)}
+                style={{ padding: '4px 8px' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleEditCustomerSubmit}>
+              <div className="form-group">
+                <label className="form-label">Customer / Client Name</label>
+                <input className="form-input" type="text" value={editName} onChange={(e) => setEditName(e.target.value)} required />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Customer Type</label>
+                <select className="form-select" value={editCustomerType} onChange={(e) => setEditCustomerType(e.target.value)}>
+                  <option value="Hospital">Hospital</option>
+                  <option value="School">School</option>
+                  <option value="Factory">Factory</option>
+                  <option value="Hotel">Hotel</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Contact Person Name</label>
+                <input className="form-input" type="text" placeholder="e.g. Dr. A. K. Sharma" value={editContactPerson} onChange={(e) => setEditContactPerson(e.target.value)} />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Phone Number</label>
+                <input className="form-input" type="text" placeholder="+91 xxxxx xxxxx" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Email Address</label>
+                <input className="form-input" type="email" placeholder="client@domain.com" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Portal Login Username</label>
+                <input className="form-input" type="text" placeholder="e.g. tirupati" value={editUsername} onChange={(e) => setEditUsername(e.target.value)} />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Address</label>
+                <input className="form-input" type="text" placeholder="Full street address" value={editAddress} onChange={(e) => setEditAddress(e.target.value)} />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '25px' }}>
+                <button type="button" className="btn-secondary" onClick={() => setShowEditCustomerModal(false)}>Cancel</button>
+                <button type="submit" className="btn-primary">Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {confirmModal.isOpen && (
         <div style={{
           position: 'fixed',

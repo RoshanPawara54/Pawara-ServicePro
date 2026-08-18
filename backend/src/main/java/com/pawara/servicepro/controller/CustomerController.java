@@ -105,13 +105,33 @@ public class CustomerController {
         }
 
         Customer customer = customerOpt.get();
-        customer.setName(request.getName());
-        customer.setCustomerType(request.getCustomerType());
-        customer.setContactPerson(request.getContactPerson());
-        customer.setPhone(request.getPhone());
-        customer.setEmail(request.getEmail());
-        customer.setAddress(request.getAddress());
+        if (request.getName() != null) customer.setName(request.getName());
+        if (request.getCustomerType() != null) customer.setCustomerType(request.getCustomerType());
+        if (request.getContactPerson() != null) customer.setContactPerson(request.getContactPerson());
+        if (request.getPhone() != null) customer.setPhone(request.getPhone());
+        if (request.getEmail() != null) customer.setEmail(request.getEmail());
+        if (request.getAddress() != null) customer.setAddress(request.getAddress());
         Customer updatedCustomer = customerRepository.save(customer);
+
+        // Update portal login username if provided
+        if (request.getUsername() != null && !request.getUsername().trim().isEmpty()) {
+            String newUsername = request.getUsername().trim().toLowerCase();
+            Optional<User> customerUserOpt = userRepository.findAll().stream()
+                    .filter(u -> u.getCustomer() != null && id.equals(u.getCustomer().getId()))
+                    .findFirst();
+
+            if (customerUserOpt.isPresent()) {
+                User u = customerUserOpt.get();
+                if (!u.getUsername().equalsIgnoreCase(newUsername)) {
+                    Optional<User> existing = userRepository.findByUsername(newUsername);
+                    if (existing.isPresent() && !existing.get().getId().equals(u.getId())) {
+                        return ResponseEntity.badRequest().body(Map.of("message", "Username '" + newUsername + "' is already taken."));
+                    }
+                    u.setUsername(newUsername);
+                    userRepository.save(u);
+                }
+            }
+        }
 
         if (request.getContract() != null) {
             ContractRequest cr = request.getContract();
@@ -333,6 +353,7 @@ public class CustomerController {
         private String phone;
         private String email;
         private String address;
+        private String username;
         private ContractRequest contract;
     }
 

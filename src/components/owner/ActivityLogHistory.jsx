@@ -35,18 +35,28 @@ export default function ActivityLogHistory() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <div>
-          <button 
-            className="btn-secondary" 
-            onClick={() => navigate('/dashboard')}
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '15px', padding: '8px 12px' }}
-          >
-            <ArrowLeft size={16} /> Back to Dashboard
-          </button>
-          <h1>Activity History</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Complete audit log of actions performed in Pawara ServicePro</p>
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '25px' }}>
+        <button
+          type="button"
+          onClick={() => navigate('/dashboard')}
+          title="Back to Dashboard"
+          style={{
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '0',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--text-main)',
+            flexShrink: 0
+          }}
+        >
+          <ArrowLeft size={28} strokeWidth={2.4} />
+        </button>
+        <h1 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 700, color: 'var(--text-main)' }}>
+          Activity History
+        </h1>
       </div>
 
       {error && (
