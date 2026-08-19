@@ -18,6 +18,7 @@ import CustomerManagement from '../components/owner/CustomerManagement';
 import RevenueAnalytics from '../components/owner/RevenueAnalytics';
 import ActivityLogHistory from '../components/owner/ActivityLogHistory';
 import TrashManagement from '../components/owner/TrashManagement';
+import OwnerProfile from '../components/owner/OwnerProfile';
 
 // Customer pages
 import CustomerPortal from '../components/customer/CustomerPortal';
@@ -72,6 +73,7 @@ export default function AppRoutes() {
         <Route path="/revenue" element={<RevenueAnalytics />} />
         <Route path="/activities" element={<ActivityLogHistory />} />
         <Route path="/trash" element={<TrashManagement />} />
+        <Route path="/profile" element={<OwnerProfile />} />
       </Route>
 
       {/* Customer routes */}

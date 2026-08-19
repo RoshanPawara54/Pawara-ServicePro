@@ -22,20 +22,14 @@ export default function OwnerLayout() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Mobile profile panel
-  const [profileOpen, setProfileOpen] = useState(false);
-
   // Mobile search
   const [searchVal, setSearchVal] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [searchData, setSearchData] = useState({ customers: [], bills: [], requests: [], activities: [] });
 
-  // Bill counts for profile stats panel
-  const [billCounts, setBillCounts] = useState({ prashansha: 0, pawara: 0, quotations: 0 });
-
   const closeSidebar = () => setSidebarOpen(false);
 
-  // Load data for mobile search autocomplete + profile stats
+  // Load data for mobile search autocomplete
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -45,17 +39,11 @@ export default function OwnerLayout() {
           api.get('/api/owner/requests'),
           api.get('/api/owner/activities'),
         ]);
-        const bills = billRes.data || [];
         setSearchData({
           customers: custRes.data || [],
-          bills,
+          bills: billRes.data || [],
           requests: reqRes.data || [],
           activities: actRes.data || [],
-        });
-        setBillCounts({
-          prashansha: bills.filter(b => b.billType === 'SHOP_BILL' && b.businessName !== 'PAWARA_ELECTRICAL').length,
-          pawara: bills.filter(b => b.billType === 'SHOP_BILL' && b.businessName === 'PAWARA_ELECTRICAL').length,
-          quotations: bills.filter(b => b.billType === 'SHOP_QUOTATION').length,
         });
       } catch (_) { }
     };
@@ -261,63 +249,13 @@ export default function OwnerLayout() {
           <span>Revenue</span>
         </button>
         <button
-          className={`mobile-footer-tab ${profileOpen ? 'active' : ''}`}
-          onClick={() => setProfileOpen(true)}
+          className={`mobile-footer-tab ${isFooterActive(['/profile']) ? 'active' : ''}`}
+          onClick={() => navigate('/profile')}
         >
           <User size={22} />
           <span>Profile</span>
         </button>
       </nav>
-
-      {/* ── MOBILE PROFILE SLIDE-UP PANEL ── */}
-      {profileOpen && (
-        <div
-          className="mobile-profile-overlay no-print"
-          onClick={() => setProfileOpen(false)}
-        >
-          <div className="mobile-profile-panel" onClick={e => e.stopPropagation()}>
-
-            {/* Close button */}
-            <button className="mobile-profile-close" onClick={() => setProfileOpen(false)}>
-              <X size={20} />
-            </button>
-
-            {/* Profile hero */}
-            <div className="mobile-profile-hero">
-              <div className="mobile-profile-avatar">
-                <User size={44} color="#fff" />
-              </div>
-              <h2 className="mobile-profile-name">{user?.username?.toUpperCase()}</h2>
-              <span className="mobile-profile-role">Owner · Prashansha Electrical Services</span>
-            </div>
-
-            {/* Bill stats */}
-            <div className="mobile-profile-stats">
-              <div className="mobile-stat-card">
-                <span className="mobile-stat-value">{billCounts.prashansha}</span>
-                <span className="mobile-stat-label">Prashansha Electrical Bills</span>
-              </div>
-              <div className="mobile-stat-card">
-                <span className="mobile-stat-value">{billCounts.pawara}</span>
-                <span className="mobile-stat-label">Pawara Electrical Bills</span>
-              </div>
-              <div className="mobile-stat-card">
-                <span className="mobile-stat-value">{billCounts.quotations}</span>
-                <span className="mobile-stat-label">Prashansha Electrical Quotations</span>
-              </div>
-            </div>
-
-            {/* Logout */}
-            <button
-              className="mobile-profile-logout"
-              onClick={() => { setProfileOpen(false); logout(); }}
-            >
-              <LogOut size={18} /> Log Out
-            </button>
-
-          </div>
-        </div>
-      )}
 
     </div>
   );

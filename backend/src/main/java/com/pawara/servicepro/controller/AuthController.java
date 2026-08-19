@@ -138,6 +138,44 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "Password reset successfully. You can now login."));
     }
 
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody Map<String, String> body) {
+        String username = body.get("username");
+        String currentPassword = body.get("currentPassword");
+        String newPassword = body.get("newPassword");
+
+        if (username == null || username.isBlank()) {
+            org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+                username = auth.getName();
+            }
+        }
+
+        if (username == null || username.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Username is required"));
+        }
+
+        Optional<User> userOpt = userRepository.findByUsername(username);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "User not found"));
+        }
+
+        User user = userOpt.get();
+        if (currentPassword != null && !currentPassword.isBlank()) {
+            if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Current password is incorrect"));
+            }
+        }
+
+        if (newPassword == null || newPassword.length() < 4) {
+            return ResponseEntity.badRequest().body(Map.of("message", "New password must be at least 4 characters"));
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        return ResponseEntity.ok(Map.of("message", "Password updated successfully!"));
+    }
+
     @Data
     public static class LoginRequest {
         private String username;

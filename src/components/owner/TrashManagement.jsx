@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import { Trash2, RotateCcw, AlertTriangle } from 'lucide-react';
+import { Trash2, RotateCcw, AlertTriangle, ArrowLeft } from 'lucide-react';
 
 export default function TrashManagement() {
+  const navigate = useNavigate();
   const [trashedCustomers, setTrashedCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -84,12 +86,38 @@ export default function TrashManagement() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <div>
-          <h1>Customer Trash Bin</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Restore or permanently delete trashed customer accounts and their associated history</p>
-        </div>
+      <div className="mobile-sticky-page-header" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '25px' }}>
+        <button
+          type="button"
+          onClick={() => {
+            if (window.history.length > 1) {
+              navigate(-1);
+            } else {
+              navigate('/dashboard');
+            }
+          }}
+          title="Go Back"
+          style={{
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '0',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--text-main)',
+            flexShrink: 0
+          }}
+        >
+          <ArrowLeft size={28} strokeWidth={2.4} />
+        </button>
+        <h1 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 700, color: 'var(--text-main)' }}>
+          Customer Trash Bin
+        </h1>
       </div>
+      {/* Spacer to push content below the fixed bar on mobile */}
+      <div className="mobile-sticky-spacer" />
+
 
       {success && (
         <div style={{
