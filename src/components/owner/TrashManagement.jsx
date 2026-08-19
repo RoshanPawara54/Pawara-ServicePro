@@ -112,7 +112,7 @@ export default function TrashManagement() {
           <ArrowLeft size={28} strokeWidth={2.4} />
         </button>
         <h1 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 700, color: 'var(--text-main)' }}>
-          Customer Trash Bin
+          Trash
         </h1>
       </div>
       {/* Spacer to push content below the fixed bar on mobile */}
@@ -152,7 +152,8 @@ export default function TrashManagement() {
       )}
 
       <div className="glass-card">
-        <div className="data-table-container">
+        {/* Desktop Table View */}
+        <div className="data-table-container trash-table-desktop">
           <table className="data-table">
             <thead>
               <tr>
@@ -214,6 +215,52 @@ export default function TrashManagement() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Cards (Cart View) */}
+        <div className="trash-cards-mobile">
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '30px' }}>
+              <div className="spin-loader" style={{ width: '24px', height: '24px', borderWidth: '3px', margin: '0 auto 10px' }} />
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Loading...</span>
+            </div>
+          ) : trashedCustomers.length > 0 ? (
+            trashedCustomers.map((cust) => (
+              <div key={cust.id} className="trash-card">
+                <div className="trash-card-header">
+                  <strong className="trash-card-name">{cust.name}</strong>
+                  <span className="badge badge-quotation">{cust.customerType}</span>
+                </div>
+                <div className="trash-card-body">
+                  <div className="trash-card-row">
+                    <span className="trash-card-label">Date Moved to Trash</span>
+                    <span className="trash-card-val">{cust.trashedAt ? new Date(cust.trashedAt).toLocaleString() : 'N/A'}</span>
+                  </div>
+                </div>
+                <div className="trash-card-actions">
+                  <button
+                    className="btn-secondary btn-small trash-card-btn"
+                    onClick={() => handleRestoreClick(cust)}
+                    style={{ whiteSpace: 'nowrap' }}
+                  >
+                    <RotateCcw size={14} /> Restore
+                  </button>
+                  <button
+                    className="btn-danger btn-small trash-card-btn"
+                    onClick={() => handleDeleteClick(cust)}
+                    style={{ background: '#dc2626', borderColor: '#dc2626', color: '#fff', whiteSpace: 'nowrap' }}
+                  >
+                    <Trash2 size={14} /> Delete Permanently
+                  </button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '30px 15px' }}>
+              <div style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '4px', color: 'var(--text-main)' }}>No Trashed Customers</div>
+              <div style={{ fontSize: '0.85rem' }}>Trash bin is currently empty.</div>
+            </div>
+          )}
         </div>
       </div>
 

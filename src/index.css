@@ -1722,6 +1722,8 @@ h6 {
 /* Desktop/tablet: table visible, cards hidden */
 .monthly-table-desktop { display: block; }
 .monthly-cards-mobile  { display: none; }
+.trash-table-desktop   { display: block; }
+.trash-cards-mobile    { display: none; }
 
 @media (max-width: 768px) {
   /* ── Revenue: stack the two panels full-width ── */
@@ -1811,6 +1813,79 @@ h6 {
     height: 1px;
     background: var(--card-border);
     margin: 4px 0;
+  }
+
+  /* ── Trash Management: hide table, show cards ── */
+  .trash-table-desktop { display: none !important; }
+  .trash-cards-mobile  { display: flex !important; flex-direction: column; gap: 12px; }
+
+  .trash-card {
+    background: #ffffff;
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  }
+
+  .trash-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #faf9f6;
+    border-bottom: 1px solid var(--card-border);
+  }
+
+  .trash-card-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-main);
+    font-family: var(--font-title);
+  }
+
+  .trash-card-body {
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .trash-card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .trash-card-label {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .trash-card-val {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-main);
+  }
+
+  .trash-card-actions {
+    display: flex;
+    gap: 8px;
+    padding: 10px 16px 14px;
+    border-top: 1px solid var(--card-border);
+  }
+
+  .trash-card-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    white-space: nowrap;
   }
 }
 /* ── Mobile Sticky Page Header (Activity History & Customer Profile) ── */

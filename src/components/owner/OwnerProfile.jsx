@@ -202,7 +202,7 @@ export default function OwnerProfile() {
           <ChevronRight size={18} color="var(--text-muted)" />
         </button>
 
-        {/* 🗑️ Trash Module Item */}
+        {/* 🗑️ Trash Item */}
         <button
           type="button"
           className="opp-card opp-action-card"
@@ -212,7 +212,7 @@ export default function OwnerProfile() {
             <div className="opp-icon-badge opp-icon-trash">
               <Trash2 size={18} />
             </div>
-            <span className="opp-card-title">Trash module</span>
+            <span className="opp-card-title">Trash</span>
           </div>
           <ChevronRight size={18} color="var(--text-muted)" />
         </button>
