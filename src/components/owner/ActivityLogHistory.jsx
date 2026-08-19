@@ -35,7 +35,7 @@ export default function ActivityLogHistory() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '25px' }}>
+      <div className="mobile-sticky-page-header" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '25px' }}>
         <button
           type="button"
           onClick={() => navigate('/dashboard')}
@@ -58,6 +58,8 @@ export default function ActivityLogHistory() {
           Activity History
         </h1>
       </div>
+      {/* Spacer to push content below the fixed bar on mobile */}
+      <div className="mobile-sticky-spacer" />
 
       {error && (
         <div style={{

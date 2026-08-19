@@ -696,8 +696,9 @@ export default function CustomerManagement() {
           )}
         </div>
       ) : profile ? (
-        <div className="maintenance-profile-header" style={{ marginBottom: '22px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'nowrap' }}>
+        <>
+          {/* Sticky bar: arrow + customer name only */}
+          <div className="mobile-sticky-page-header" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
             <button
               type="button"
               onClick={() => navigate('/maintenance')}
@@ -716,19 +717,21 @@ export default function CustomerManagement() {
             >
               <ArrowLeft size={28} strokeWidth={2.4} />
             </button>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
-              <h1 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {profile.name}
-              </h1>
-              {credentials && (
-                <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                  Portal Login: <strong style={{ color: 'var(--text-main)' }}>{credentials.username}</strong>
-                </div>
-              )}
-            </div>
+            <h1 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {profile.name}
+            </h1>
           </div>
-        </div>
+
+          {/* Spacer to push content below the fixed bar on mobile */}
+          <div className="mobile-sticky-spacer" />
+
+          {/* Portal login outside the sticky bar — visible in content area */}
+          {credentials && (
+            <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '22px' }}>
+              Portal Login: <strong style={{ color: 'var(--text-main)' }}>{credentials.username}</strong>
+            </div>
+          )}
+        </>
       ) : null}
 
       {success && (
