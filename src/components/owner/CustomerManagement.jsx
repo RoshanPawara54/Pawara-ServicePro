@@ -117,7 +117,9 @@ export default function CustomerManagement() {
   const fetchCustomers = async () => {
     try {
       const res = await api.get('/api/owner/customers');
-      setCustomers(res.data);
+      const list = res.data || [];
+      list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0) || (b.id || 0) - (a.id || 0));
+      setCustomers(list);
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Error occurred');
     } finally {
@@ -128,6 +130,22 @@ export default function CustomerManagement() {
   useEffect(() => {
     fetchCustomers();
   }, []);
+
+  // Auto-dismiss success alert after 10 seconds
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(''), 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  // Auto-dismiss error alert after 10 seconds
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(''), 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   useEffect(() => {
     if (id) {
@@ -162,17 +180,23 @@ export default function CustomerManagement() {
         setCredentials(null);
       }
 
-      // 4. Fetch requests
+      // 4. Fetch requests (sorted latest to oldest)
       const reqsRes = await api.get('/api/owner/requests');
-      setRequests(reqsRes.data.filter(r => r.customer?.id === id));
+      const reqList = (reqsRes.data || []).filter(r => r.customer?.id === id);
+      reqList.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0) || (b.id || 0) - (a.id || 0));
+      setRequests(reqList);
 
-      // 5. Fetch bills
+      // 5. Fetch bills (sorted latest to oldest)
       const billsRes = await api.get('/api/owner/bills');
-      setBills(billsRes.data.filter(b => b.customer?.id === id));
+      const billList = (billsRes.data || []).filter(b => b.customer?.id === id);
+      billList.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0) || (b.id || 0) - (a.id || 0));
+      setBills(billList);
 
-      // 6. Fetch payments
+      // 6. Fetch payments (sorted latest to oldest)
       const paymentsRes = await api.get(`/api/owner/customers/${id}/payments`);
-      setPayments(paymentsRes.data);
+      const paymentList = paymentsRes.data || [];
+      paymentList.sort((a, b) => new Date(b.paymentDate || b.createdAt || 0) - new Date(a.paymentDate || a.createdAt || 0) || (b.id || 0) - (a.id || 0));
+      setPayments(paymentList);
 
     } catch (err) {
       setError(err.response?.data?.message || err.message);

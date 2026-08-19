@@ -28,7 +28,9 @@ export default function TrashManagement() {
   const fetchTrashedCustomers = async () => {
     try {
       const res = await api.get('/api/owner/customers/trash');
-      setTrashedCustomers(res.data);
+      const list = res.data || [];
+      list.sort((a, b) => new Date(b.trashedAt || b.createdAt || 0) - new Date(a.trashedAt || a.createdAt || 0) || (b.id || 0) - (a.id || 0));
+      setTrashedCustomers(list);
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Error fetching trash');
     } finally {
@@ -39,6 +41,22 @@ export default function TrashManagement() {
   useEffect(() => {
     fetchTrashedCustomers();
   }, []);
+
+  // Auto-dismiss success alert after 10 seconds
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(''), 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  // Auto-dismiss error alert after 10 seconds
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(''), 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   const handleRestoreClick = (cust) => {
     setRestoreModal({

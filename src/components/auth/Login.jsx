@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { KeyRound, Mail, Lock, Sparkles, Loader } from 'lucide-react';
@@ -18,6 +18,29 @@ export default function Login() {
   const [forgotError, setForgotError] = useState('');
   const [forgotSuccess, setForgotSuccess] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
+
+  // Auto-dismiss login error after 10 seconds
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(''), 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  // Auto-dismiss forgot password alerts after 10 seconds
+  useEffect(() => {
+    if (forgotError) {
+      const timer = setTimeout(() => setForgotError(''), 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [forgotError]);
+
+  useEffect(() => {
+    if (forgotSuccess) {
+      const timer = setTimeout(() => setForgotSuccess(''), 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [forgotSuccess]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

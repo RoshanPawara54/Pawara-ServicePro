@@ -12,7 +12,9 @@ export default function ActivityLogHistory() {
   const fetchActivities = async () => {
     try {
       const res = await api.get('/api/owner/activities');
-      setActivities(res.data);
+      const list = res.data || [];
+      list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0) || (b.id || 0) - (a.id || 0));
+      setActivities(list);
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Error occurred');
     } finally {

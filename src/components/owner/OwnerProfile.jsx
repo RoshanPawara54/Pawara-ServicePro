@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -55,6 +55,29 @@ export default function OwnerProfile() {
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
 
+  // Auto-dismiss infoSuccess alert after 10 seconds
+  React.useEffect(() => {
+    if (infoSuccess) {
+      const timer = setTimeout(() => setInfoSuccess(''), 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [infoSuccess]);
+
+  // Auto-dismiss password alerts after 10 seconds
+  React.useEffect(() => {
+    if (passwordError) {
+      const timer = setTimeout(() => setPasswordError(''), 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [passwordError]);
+
+  React.useEffect(() => {
+    if (passwordSuccess) {
+      const timer = setTimeout(() => setPasswordSuccess(''), 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [passwordSuccess]);
+
   // Handlers for Personal Info
   const handleOpenEditInfo = () => {
     setEditForm(personalInfo);
@@ -69,7 +92,6 @@ export default function OwnerProfile() {
     localStorage.setItem('owner_personal_info', JSON.stringify(editForm));
     setIsEditingInfo(false);
     setInfoSuccess('Personal information updated successfully!');
-    setTimeout(() => setInfoSuccess(''), 4000);
   };
 
   // Handlers for Change Password
@@ -102,8 +124,7 @@ export default function OwnerProfile() {
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setTimeout(() => {
         setIsChangingPassword(false);
-        setPasswordSuccess('');
-      }, 2000);
+      }, 1500);
     } catch (err) {
       setPasswordError(err.response?.data?.message || err.message || 'Failed to change password');
     } finally {

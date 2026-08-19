@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface BillRepository extends JpaRepository<Bill, Long> {
+    List<Bill> findAllByOrderByCreatedAtDesc();
     List<Bill> findByCustomerIdOrderByCreatedAtDesc(Long customerId);
     Optional<Bill> findByMaintenanceRequestId(Long maintenanceRequestId);
     List<Bill> findByBillTypeOrderByCreatedAtDesc(String billType);

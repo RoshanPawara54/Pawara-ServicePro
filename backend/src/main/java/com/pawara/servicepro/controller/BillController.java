@@ -28,7 +28,7 @@ public class BillController {
 
     @GetMapping("/api/owner/bills")
     public List<Bill> getAllBills() {
-        return billRepository.findAll();
+        return billRepository.findAllByOrderByCreatedAtDesc();
     }
 
     @GetMapping("/api/owner/bills/{id}")

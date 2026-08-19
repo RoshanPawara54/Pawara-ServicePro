@@ -79,7 +79,7 @@ public class RequestController {
 
     @GetMapping("/api/owner/requests")
     public List<MaintenanceRequest> getAllRequests() {
-        return requestRepository.findAll();
+        return requestRepository.findAllByOrderByCreatedAtDesc();
     }
 
     @PutMapping("/api/owner/requests/{id}/status")

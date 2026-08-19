@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
+import { generateInvoicePDF } from '../../utils/generateInvoicePDF';
 import {
   FileText,
   Send,
@@ -12,7 +13,8 @@ import {
   TrendingUp,
   User,
   Home,
-  LogOut
+  LogOut,
+  Download
 } from 'lucide-react';
 
 export default function CustomerPortal() {
@@ -33,7 +35,7 @@ export default function CustomerPortal() {
   const [selectedBillDetail, setSelectedBillDetail] = useState(null);
 
   const getBusinessNameDisplay = (bill) => {
-    if (!bill) return '';
+    if (!bill) return 'PRASHANSHA ELECTRICAL';
     if (bill.billType === 'SHOP_QUOTATION') return 'PRASHANSHA ELECTRICALS';
     if (bill.businessName === 'PAWARA_ELECTRICAL') return 'PAWARA ELECTRICAL';
     return 'PRASHANSHA ELECTRICAL';
@@ -61,13 +63,19 @@ export default function CustomerPortal() {
       } catch { setContract(null); }
 
       const reqsRes = await api.get('/api/customer/requests');
-      setRequests(reqsRes.data);
+      const reqList = reqsRes.data || [];
+      reqList.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0) || (b.id || 0) - (a.id || 0));
+      setRequests(reqList);
 
       const billsRes = await api.get('/api/customer/bills');
-      setBills(billsRes.data);
+      const billList = billsRes.data || [];
+      billList.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0) || (b.id || 0) - (a.id || 0));
+      setBills(billList);
 
       const paymentsRes = await api.get('/api/customer/payments');
-      setPayments(paymentsRes.data);
+      const paymentList = paymentsRes.data || [];
+      paymentList.sort((a, b) => new Date(b.paymentDate || b.createdAt || 0) - new Date(a.paymentDate || a.createdAt || 0) || (b.id || 0) - (a.id || 0));
+      setPayments(paymentList);
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Error loading dashboard data');
     } finally {
@@ -76,6 +84,22 @@ export default function CustomerPortal() {
   };
 
   useEffect(() => { fetchCustomerData(); }, []);
+
+  // Auto-dismiss success alert after 10 seconds
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(''), 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  // Auto-dismiss error alert after 10 seconds
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(''), 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   const handleRequestSubmit = async (e) => {
     e.preventDefault();
@@ -86,7 +110,7 @@ export default function CustomerPortal() {
     setError(''); setSuccess('');
     try {
       await api.post('/api/customer/requests', { description });
-      setSuccess('Maintenance request submitted successfully! The Owner has been notified in real-time.');
+      setSuccess('Maintenance request submitted successfully!');
       setDescription('');
       fetchCustomerData();
     } catch (err) { setError(err.response?.data?.message || err.message); }
@@ -107,6 +131,22 @@ export default function CustomerPortal() {
     );
   };
 
+  const handleDownloadBillPDF = async (billId, billFallback) => {
+    try {
+      const res = await api.get(`/api/customer/bills/${billId}`);
+      const fullBill = res.data;
+      const businessDisplay = getBusinessNameDisplay(fullBill);
+      generateInvoicePDF(fullBill, businessDisplay);
+    } catch (err) {
+      if (billFallback) {
+        const businessDisplay = getBusinessNameDisplay(billFallback);
+        generateInvoicePDF(billFallback, businessDisplay);
+      } else {
+        setError('Failed to download invoice PDF');
+      }
+    }
+  };
+
   const handlePrint = () => window.print();
 
   if (loading) {
@@ -120,17 +160,17 @@ export default function CustomerPortal() {
 
   return (
     <div>
-      {/* Title section — hidden when printing */}
-      <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <div>
-          <h1 className="portal-title">Client Service Portal</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Logged in as: <strong>{user?.customerName || user?.username}</strong></p>
-        </div>
-        <div>
-          <span className="badge badge-quotation" style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
-            <User size={14} /> Maintenance Account
-          </span>
-        </div>
+      {/* ── MOBILE STICKY TOP BAR: Module Name ── */}
+      <div className="mobile-sticky-page-header no-print">
+        <h1 style={{ margin: 0, fontSize: '1.45rem', fontWeight: 700, color: 'var(--text-main)' }}>
+          {mobileTab === 'bills' ? 'Billing' : (mobileTab === 'profile' ? 'Profile' : 'Client Service Portal')}
+        </h1>
+      </div>
+      <div className="mobile-sticky-spacer no-print" />
+
+      {/* Desktop Header */}
+      <div className="desktop-header-only no-print" style={{ marginBottom: '30px' }}>
+        <h1 className="portal-title">Client Service Portal</h1>
       </div>
 
       {/* Global alerts (visible on all tabs) */}
@@ -371,7 +411,7 @@ export default function CustomerPortal() {
               </div>
             </div>
 
-            {/* RIGHT COLUMN — Maintenance Bill tab on mobile */}
+            {/* RIGHT COLUMN — Billing tab on mobile */}
             <div
               className={`customer-bills-section ${mobileTab === 'bills' ? 'tab-active' : ''}`}
               style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}
@@ -381,7 +421,9 @@ export default function CustomerPortal() {
                 <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <FileText size={18} color="var(--color-primary)" /> Material Invoices (Uncovered Cost)
                 </h3>
-                <div className="data-table-container">
+
+                {/* Desktop Table View */}
+                <div className="data-table-container customer-bills-table-desktop">
                   <table className="data-table">
                     <thead>
                       <tr>
@@ -401,6 +443,9 @@ export default function CustomerPortal() {
                           <td>
                             <div style={{ display: 'flex', gap: '8px' }}>
                               <button className="btn-secondary btn-small" onClick={() => setSelectedBillDetail(b)}>View</button>
+                              <button className="btn-secondary btn-small" onClick={() => handleDownloadBillPDF(b.id, b)}>
+                                <Download size={14} /> PDF
+                              </button>
                               {b.status === 'UNPAID' && (
                                 <button
                                   className="btn-primary btn-small"
@@ -423,6 +468,51 @@ export default function CustomerPortal() {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Mobile Cart View */}
+                <div className="customer-bills-cards-mobile">
+                  {bills.length > 0 ? bills.map(b => (
+                    <div key={b.id} className="cust-bill-card">
+                      <div className="cust-bill-card-header">
+                        <strong className="cust-bill-card-number">{b.billNumber}</strong>
+                        <span className={`badge ${b.status === 'PAID' ? 'badge-completed' : (b.status === 'PENDING_APPROVAL' ? 'badge-pending' : 'badge-unpaid')}`}>
+                          {b.status === 'PENDING_APPROVAL' ? 'PENDING APPROVAL' : b.status}
+                        </span>
+                      </div>
+                      <div className="cust-bill-card-body">
+                        <div className="cust-bill-card-row">
+                          <span className="cust-bill-card-label">Invoice Date</span>
+                          <span className="cust-bill-card-val">{new Date(b.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <div className="cust-bill-card-row">
+                          <span className="cust-bill-card-label">Total Amount</span>
+                          <span className="cust-bill-card-amount">₹{b.totalAmount.toFixed(2)}</span>
+                        </div>
+                      </div>
+                      <div className="cust-bill-card-actions">
+                        <button
+                          className="btn-secondary btn-small cust-bill-card-btn"
+                          onClick={() => handleDownloadBillPDF(b.id, b)}
+                        >
+                          <Download size={14} /> Download
+                        </button>
+                        {b.status === 'UNPAID' && (
+                          <button
+                            className="btn-primary btn-small cust-bill-card-btn"
+                            onClick={() => handlePayBillCustomer(b.id)}
+                            style={{ background: '#047857', borderColor: '#047857', color: '#fff' }}
+                          >
+                            Tick Paid
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )) : (
+                    <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '25px 15px', fontSize: '0.9rem' }}>
+                      No material bills generated.
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Payment Ledger */}
@@ -430,7 +520,9 @@ export default function CustomerPortal() {
                 <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <CreditCard size={18} color="var(--color-success)" /> Your Payment Ledger
                 </h3>
-                <div className="data-table-container">
+
+                {/* Desktop Table View */}
+                <div className="data-table-container payment-ledger-table-desktop">
                   <table className="data-table">
                     <thead>
                       <tr><th>Date</th><th>Type</th><th>Amount</th></tr>
@@ -454,6 +546,30 @@ export default function CustomerPortal() {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Mobile Activity History Style Cards */}
+                <div className="payment-ledger-cards-mobile">
+                  {payments.length > 0 ? payments.map(p => (
+                    <div key={p.id} className="ledger-card">
+                      <div className="ledger-card-top">
+                        <span className="ledger-card-date">{new Date(p.paymentDate).toLocaleString()}</span>
+                        <span className="badge badge-quotation">
+                          {p.paymentType === 'CONTRACT_PAYMENT' ? 'Contract' : 'Material'}
+                        </span>
+                      </div>
+                      <div className="ledger-card-content">
+                        <strong className="ledger-card-title">
+                          {p.paymentType === 'CONTRACT_PAYMENT' ? 'Maintenance Contract Payment' : 'Material Bill Payment'}
+                        </strong>
+                        <span className="ledger-card-amount">₹{p.amount.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  )) : (
+                    <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '25px 15px', fontSize: '0.9rem' }}>
+                      No logged payments found.
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -476,9 +592,6 @@ export default function CustomerPortal() {
               <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: 6, textAlign: 'center' }}>
                 {user?.customerName || user?.username}
               </h2>
-              <span className="badge badge-quotation" style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
-                <User size={12} /> Maintenance Account
-              </span>
             </div>
 
             {/* Contract details (moved here from top banner on mobile) */}
@@ -555,7 +668,7 @@ export default function CustomerPortal() {
           onClick={() => setMobileTab('bills')}
         >
           <FileText size={22} />
-          <span>Maint. Bill</span>
+          <span>Billing</span>
         </button>
         <button
           className={`mobile-footer-tab ${mobileTab === 'profile' ? 'active' : ''}`}
@@ -568,3 +681,4 @@ export default function CustomerPortal() {
     </div>
   );
 }
+
