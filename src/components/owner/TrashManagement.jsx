@@ -156,19 +156,19 @@ export default function TrashManagement() {
                     <td>
                       {cust.trashedAt ? new Date(cust.trashedAt).toLocaleString() : 'N/A'}
                     </td>
-                    <td className="actions-cell">
-                      <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                    <td className="actions-cell" style={{ whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'nowrap' }}>
                         <button 
                           className="btn-secondary btn-small" 
                           onClick={() => handleRestoreClick(cust)}
-                          style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                          style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}
                         >
                           <RotateCcw size={14} /> Restore
                         </button>
                         <button 
                           className="btn-danger btn-small" 
                           onClick={() => handleDeleteClick(cust)}
-                          style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#dc2626', borderColor: '#dc2626', color: '#fff' }}
+                          style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#dc2626', borderColor: '#dc2626', color: '#fff', whiteSpace: 'nowrap' }}
                         >
                           <Trash2 size={14} /> Delete Permanently
                         </button>

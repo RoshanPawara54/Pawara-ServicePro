@@ -1507,8 +1507,14 @@ h6 {
 /* ── Customer Profile: Info Grid & Details (T2) ── */
 .profile-info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
+}
+
+@media (max-width: 1024px) {
+  .profile-info-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .profile-info-item {
@@ -1519,6 +1525,7 @@ h6 {
   padding: 10px 14px;
   border-radius: 10px;
   border: 1px solid var(--card-border);
+  min-width: 0;
 }
 
 .profile-info-item.full-width {
@@ -1537,7 +1544,11 @@ h6 {
   font-size: 0.95rem;
   color: var(--text-main);
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
 
 /* ── Payment Log Card Layout (T3: matches activity history) ── */
 .payment-log-card {

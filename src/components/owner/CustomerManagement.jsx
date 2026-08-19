@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import { generateInvoicePDF } from '../../utils/generateInvoicePDF';
 import { 
   Search, 
   UserPlus, 
@@ -16,7 +17,8 @@ import {
   CheckSquare,
   Printer,
   Edit,
-  ArrowLeft
+  ArrowLeft,
+  Download
 } from 'lucide-react';
 
 export default function CustomerManagement() {
@@ -311,6 +313,26 @@ export default function CustomerManagement() {
     setEditingBillNumber('');
     setLabourCharge('200');
     setBillItems([{ itemName: '', quantity: '1', unitPrice: '0', unitCost: '0' }]);
+  };
+
+  const handleDownloadBillPDF = async (billId, billFallback) => {
+    try {
+      const res = await api.get(`/api/owner/bills/${billId}`);
+      const fullBill = res.data;
+      const businessDisplay = fullBill.billType === 'SHOP_QUOTATION'
+        ? 'PRASHANSHA ELECTRICALS'
+        : (fullBill.businessName === 'PAWARA_ELECTRICAL' ? 'PAWARA ELECTRICAL' : 'PRASHANSHA ELECTRICAL');
+      generateInvoicePDF(fullBill, businessDisplay);
+    } catch (err) {
+      if (billFallback) {
+        const businessDisplay = billFallback.billType === 'SHOP_QUOTATION'
+          ? 'PRASHANSHA ELECTRICALS'
+          : (billFallback.businessName === 'PAWARA_ELECTRICAL' ? 'PAWARA ELECTRICAL' : 'PRASHANSHA ELECTRICAL');
+        generateInvoicePDF(billFallback, businessDisplay);
+      } else {
+        setError('Failed to download bill PDF');
+      }
+    }
   };
 
   const handleEditMaterialBillClick = (bill) => {
@@ -852,25 +874,25 @@ export default function CustomerManagement() {
             <div className="profile-info-grid">
               <div className="profile-info-item">
                 <span className="profile-info-label">Contact Person</span>
-                <span className="profile-info-value">{profile.contactPerson || '-'}</span>
+                <span className="profile-info-value" title={profile.contactPerson || ''}>{profile.contactPerson || '-'}</span>
               </div>
               <div className="profile-info-item">
                 <span className="profile-info-label">Phone</span>
-                <span className="profile-info-value">{profile.phone || '-'}</span>
+                <span className="profile-info-value" title={profile.phone || ''}>{profile.phone || '-'}</span>
               </div>
               <div className="profile-info-item">
                 <span className="profile-info-label">Email</span>
-                <span className="profile-info-value">{profile.email || '-'}</span>
+                <span className="profile-info-value" title={profile.email || ''}>{profile.email || '-'}</span>
               </div>
               <div className="profile-info-item">
                 <span className="profile-info-label">Portal Login</span>
-                <span className="profile-info-value">
-                  {credentials?.username ? `@${credentials.username}` : '-'}
+                <span className="profile-info-value" title={credentials?.username || ''}>
+                  {credentials?.username || '-'}
                 </span>
               </div>
               <div className="profile-info-item full-width">
                 <span className="profile-info-label">Address</span>
-                <span className="profile-info-value">{profile.address || '-'}</span>
+                <span className="profile-info-value" style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>{profile.address || '-'}</span>
               </div>
             </div>
           </div>
@@ -1226,18 +1248,11 @@ export default function CustomerManagement() {
                       )}
                       <button 
                         className="btn-secondary btn-small"
-                        onClick={async () => {
-                          try {
-                            const res = await api.get(`/api/owner/bills/${b.id}`);
-                            setActiveBillDetail(res.data);
-                          } catch (err) {
-                            setError('Failed to load bill detail');
-                          }
-                        }}
-                        style={{ padding: '8px 12px' }}
-                        title="View Invoice"
+                        onClick={() => handleDownloadBillPDF(b.id, b)}
+                        style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        title="Download A4 PDF Invoice"
                       >
-                        View
+                        <Download size={14} /> PDF
                       </button>
                       {b.status !== 'PAID' && (
                         <button 
