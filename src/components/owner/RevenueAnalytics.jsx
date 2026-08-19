@@ -99,46 +99,62 @@ export default function RevenueAnalytics() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', alignItems: 'start', flexWrap: 'wrap' }}>
+      <div className="revenue-bottom-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', alignItems: 'start' }}>
         
         {/* Revenue Category Breakdown */}
         <div className="glass-card">
           <h3 style={{ marginBottom: '20px', borderBottom: '1px solid rgba(0,0,0,0.08)', paddingBottom: '10px' }}>
             Revenue Sources
           </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(0,0,0,0.02)', borderRadius: '8px' }}>
-              <div>
-                <strong>Electrical Shop Sales</strong>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>Direct counter invoices</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+            {/* Electrical Shop Sales */}
+            <div className="rev-source-card">
+              <div className="rev-source-left">
+                <span className="rev-source-badge rev-source-badge--shop">🏪 Shop</span>
+                <div className="rev-source-info">
+                  <strong className="rev-source-name">Electrical Shop Sales</strong>
+                  <p className="rev-source-desc">Direct counter invoices</p>
+                </div>
               </div>
-              <span style={{ fontSize: '1.1rem', fontWeight: '600' }}>₹{data?.totalShopRevenue.toFixed(2)}</span>
+              <span className="rev-source-amount">₹{data?.totalShopRevenue.toFixed(2)}</span>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(0,0,0,0.02)', borderRadius: '8px' }}>
-              <div>
-                <strong>Maintenance Service Contracts</strong>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>Monthly recurring payments</p>
+            {/* Maintenance Service Contracts */}
+            <div className="rev-source-card">
+              <div className="rev-source-left">
+                <span className="rev-source-badge rev-source-badge--contract">📋 Contract</span>
+                <div className="rev-source-info">
+                  <strong className="rev-source-name">Maintenance Service Contracts</strong>
+                  <p className="rev-source-desc">Monthly recurring payments</p>
+                </div>
               </div>
-              <span style={{ fontSize: '1.1rem', fontWeight: '600' }}>₹{data?.totalContractRevenue.toFixed(2)}</span>
+              <span className="rev-source-amount">₹{data?.totalContractRevenue.toFixed(2)}</span>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(0,0,0,0.02)', borderRadius: '8px' }}>
-              <div>
-                <strong>Maintenance Material Bills</strong>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>Additional items not covered by contract</p>
+            {/* Maintenance Material Bills */}
+            <div className="rev-source-card">
+              <div className="rev-source-left">
+                <span className="rev-source-badge rev-source-badge--material">🔧 Materials</span>
+                <div className="rev-source-info">
+                  <strong className="rev-source-name">Maintenance Material Bills</strong>
+                  <p className="rev-source-desc">Additional items not covered by contract</p>
+                </div>
               </div>
-              <span style={{ fontSize: '1.1rem', fontWeight: '600' }}>₹{data?.totalMaterialBillRevenue.toFixed(2)}</span>
+              <span className="rev-source-amount">₹{data?.totalMaterialBillRevenue.toFixed(2)}</span>
             </div>
+
           </div>
         </div>
 
-        {/* Monthly Breakdown Table */}
+        {/* Monthly Breakdown — Desktop: table, Mobile: cards */}
         <div className="glass-card">
           <h3 style={{ marginBottom: '20px', borderBottom: '1px solid rgba(0,0,0,0.08)', paddingBottom: '10px' }}>
             Monthly Analytics
           </h3>
-          <div className="data-table-container">
+
+          {/* Desktop Table */}
+          <div className="data-table-container monthly-table-desktop">
             <table className="data-table">
               <thead>
                 <tr>
@@ -170,6 +186,40 @@ export default function RevenueAnalytics() {
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Cards */}
+          <div className="monthly-cards-mobile">
+            {data?.monthlyBreakdown && data.monthlyBreakdown.length > 0 ? (
+              data.monthlyBreakdown.map((row, idx) => (
+                <div key={idx} className="monthly-card">
+                  <div className="monthly-card-header">
+                    <strong className="monthly-card-month">{row.month}</strong>
+                    <span className="monthly-card-profit">₹{row.profit.toFixed(2)}</span>
+                  </div>
+                  <div className="monthly-card-body">
+                    <div className="monthly-card-row">
+                      <span className="monthly-card-label">Revenue</span>
+                      <span className="monthly-card-val monthly-card-val--revenue">₹{row.revenue.toFixed(2)}</span>
+                    </div>
+                    <div className="monthly-card-row">
+                      <span className="monthly-card-label">Cost Margin</span>
+                      <span className="monthly-card-val monthly-card-val--cost">₹{row.cost.toFixed(2)}</span>
+                    </div>
+                    <div className="monthly-card-divider" />
+                    <div className="monthly-card-row">
+                      <span className="monthly-card-label">Net Profit</span>
+                      <span className="monthly-card-val monthly-card-val--profit">₹{row.profit.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '25px', fontSize: '0.9rem' }}>
+                No statements found.
+              </div>
+            )}
+          </div>
+
         </div>
       </div>
     </div>
