@@ -14,7 +14,11 @@ import {
   User,
   Home,
   LogOut,
-  Download
+  Download,
+  Shield,
+  Phone,
+  Mail,
+  MapPin
 } from 'lucide-react';
 
 export default function CustomerPortal() {
@@ -23,7 +27,11 @@ export default function CustomerPortal() {
   // Mobile tab: 'home' | 'bills' | 'profile'
   const [mobileTab, setMobileTab] = useState('home');
 
+  // Billing sub-tab: 'invoices' | 'ledger'
+  const [billingSubTab, setBillingSubTab] = useState('invoices');
+
   const [contract, setContract] = useState(null);
+  const [customerProfile, setCustomerProfile] = useState(null);
   const [requests, setRequests] = useState([]);
   const [bills, setBills] = useState([]);
   const [payments, setPayments] = useState([]);
@@ -61,6 +69,11 @@ export default function CustomerPortal() {
         const contractRes = await api.get('/api/customer/contract');
         setContract(contractRes.data);
       } catch { setContract(null); }
+
+      try {
+        const profileRes = await api.get('/api/customer/profile');
+        setCustomerProfile(profileRes.data);
+      } catch { setCustomerProfile(null); }
 
       const reqsRes = await api.get('/api/customer/requests');
       const reqList = reqsRes.data || [];
@@ -411,228 +424,321 @@ export default function CustomerPortal() {
               </div>
             </div>
 
-            {/* RIGHT COLUMN — Billing tab on mobile */}
+            {/* RIGHT COLUMN — Billing tab on mobile / right column on desktop */}
             <div
               className={`customer-bills-section ${mobileTab === 'bills' ? 'tab-active' : ''}`}
-              style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}
             >
-              {/* Material Invoices */}
-              <div className="glass-card">
-                <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <FileText size={18} color="var(--color-primary)" /> Material Invoices (Uncovered Cost)
-                </h3>
+              {/* ── BILLING SUB-TAB SWITCHER (Material Invoices & Payment Ledger) ── */}
+              <div className="shop-tab-switcher customer-billing-tab-switcher">
+                <button
+                  type="button"
+                  className={`shop-tab-btn ${billingSubTab === 'invoices' ? 'active' : ''}`}
+                  onClick={() => setBillingSubTab('invoices')}
+                >
+                  Material Invoices
+                </button>
+                <button
+                  type="button"
+                  className={`shop-tab-btn ${billingSubTab === 'ledger' ? 'active' : ''}`}
+                  onClick={() => setBillingSubTab('ledger')}
+                >
+                  Payment Ledger
+                </button>
+              </div>
 
-                {/* Desktop Table View */}
-                <div className="data-table-container customer-bills-table-desktop">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Invoice No</th><th>Amount</th><th>Status</th><th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {bills.length > 0 ? bills.map(b => (
-                        <tr key={b.id}>
-                          <td><strong>{b.billNumber}</strong></td>
-                          <td>₹{b.totalAmount.toFixed(2)}</td>
-                          <td>
+              {/* Material Invoices Sub-tab */}
+              {billingSubTab === 'invoices' && (
+                <div className="glass-card">
+                  <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FileText size={18} color="var(--color-primary)" /> Material Invoices (Uncovered Cost)
+                  </h3>
+
+                  {/* Desktop Table View */}
+                  <div className="data-table-container customer-bills-table-desktop">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>Invoice No</th><th>Amount</th><th>Status</th><th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {bills.length > 0 ? bills.map(b => (
+                          <tr key={b.id}>
+                            <td><strong>{b.billNumber}</strong></td>
+                            <td>₹{b.totalAmount.toFixed(2)}</td>
+                            <td>
+                              <span className={`badge ${b.status === 'PAID' ? 'badge-completed' : (b.status === 'PENDING_APPROVAL' ? 'badge-pending' : 'badge-unpaid')}`}>
+                                {b.status === 'PENDING_APPROVAL' ? 'PENDING APPROVAL' : b.status}
+                              </span>
+                            </td>
+                            <td>
+                              <div style={{ display: 'flex', gap: '8px' }}>
+                                <button className="btn-secondary btn-small" onClick={() => setSelectedBillDetail(b)}>View</button>
+                                <button className="btn-secondary btn-small" onClick={() => handleDownloadBillPDF(b.id, b)}>
+                                  <Download size={14} /> PDF
+                                </button>
+                                {b.status === 'UNPAID' && (
+                                  <button
+                                    className="btn-primary btn-small"
+                                    onClick={() => handlePayBillCustomer(b.id)}
+                                    style={{ background: '#047857', borderColor: '#047857', padding: '6px 10px' }}
+                                  >
+                                    Tick Paid
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )) : (
+                          <tr>
+                            <td colSpan="4" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '15px', fontSize: '0.85rem' }}>
+                              No material bills generated.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Mobile Cart View */}
+                  <div className="customer-bills-cards-mobile">
+                    {bills.length > 0 ? (
+                      bills.map(b => (
+                        <div key={b.id} className="cust-bill-card">
+                          <div className="cust-bill-card-header">
+                            <strong className="cust-bill-card-number">{b.billNumber}</strong>
                             <span className={`badge ${b.status === 'PAID' ? 'badge-completed' : (b.status === 'PENDING_APPROVAL' ? 'badge-pending' : 'badge-unpaid')}`}>
                               {b.status === 'PENDING_APPROVAL' ? 'PENDING APPROVAL' : b.status}
                             </span>
-                          </td>
-                          <td>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                              <button className="btn-secondary btn-small" onClick={() => setSelectedBillDetail(b)}>View</button>
-                              <button className="btn-secondary btn-small" onClick={() => handleDownloadBillPDF(b.id, b)}>
-                                <Download size={14} /> PDF
-                              </button>
-                              {b.status === 'UNPAID' && (
-                                <button
-                                  className="btn-primary btn-small"
-                                  onClick={() => handlePayBillCustomer(b.id)}
-                                  style={{ background: '#047857', borderColor: '#047857', padding: '6px 10px' }}
-                                >
-                                  Tick Paid
-                                </button>
-                              )}
+                          </div>
+                          <div className="cust-bill-card-body">
+                            <div className="cust-bill-card-row">
+                              <span className="cust-bill-card-label">Invoice Date</span>
+                              <span className="cust-bill-card-val">{new Date(b.createdAt).toLocaleDateString()}</span>
                             </div>
-                          </td>
-                        </tr>
-                      )) : (
-                        <tr>
-                          <td colSpan="4" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '15px', fontSize: '0.85rem' }}>
-                            No material bills generated.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+                            <div className="cust-bill-card-row">
+                              <span className="cust-bill-card-label">Total Amount</span>
+                              <span className="cust-bill-card-amount">₹{b.totalAmount.toFixed(2)}</span>
+                            </div>
+                          </div>
+                          <div className="cust-bill-card-actions">
+                            <button
+                              className="btn-secondary btn-small cust-bill-card-btn"
+                              onClick={() => handleDownloadBillPDF(b.id, b)}
+                            >
+                              <Download size={14} /> Download
+                            </button>
+                            {b.status === 'UNPAID' && (
+                              <button
+                                className="btn-primary btn-small cust-bill-card-btn"
+                                onClick={() => handlePayBillCustomer(b.id)}
+                                style={{ background: '#047857', borderColor: '#047857', color: '#fff' }}
+                              >
+                                Tick Paid
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '25px 15px', fontSize: '0.9rem' }}>
+                        No material bills generated.
+                      </div>
+                    )}
+                  </div>
                 </div>
+              )}
 
-                {/* Mobile Cart View */}
-                <div className="customer-bills-cards-mobile">
-                  {bills.length > 0 ? bills.map(b => (
-                    <div key={b.id} className="cust-bill-card">
-                      <div className="cust-bill-card-header">
-                        <strong className="cust-bill-card-number">{b.billNumber}</strong>
-                        <span className={`badge ${b.status === 'PAID' ? 'badge-completed' : (b.status === 'PENDING_APPROVAL' ? 'badge-pending' : 'badge-unpaid')}`}>
-                          {b.status === 'PENDING_APPROVAL' ? 'PENDING APPROVAL' : b.status}
-                        </span>
-                      </div>
-                      <div className="cust-bill-card-body">
-                        <div className="cust-bill-card-row">
-                          <span className="cust-bill-card-label">Invoice Date</span>
-                          <span className="cust-bill-card-val">{new Date(b.createdAt).toLocaleDateString()}</span>
-                        </div>
-                        <div className="cust-bill-card-row">
-                          <span className="cust-bill-card-label">Total Amount</span>
-                          <span className="cust-bill-card-amount">₹{b.totalAmount.toFixed(2)}</span>
-                        </div>
-                      </div>
-                      <div className="cust-bill-card-actions">
-                        <button
-                          className="btn-secondary btn-small cust-bill-card-btn"
-                          onClick={() => handleDownloadBillPDF(b.id, b)}
-                        >
-                          <Download size={14} /> Download
-                        </button>
-                        {b.status === 'UNPAID' && (
-                          <button
-                            className="btn-primary btn-small cust-bill-card-btn"
-                            onClick={() => handlePayBillCustomer(b.id)}
-                            style={{ background: '#047857', borderColor: '#047857', color: '#fff' }}
-                          >
-                            Tick Paid
-                          </button>
+              {/* Payment Ledger Sub-tab */}
+              {billingSubTab === 'ledger' && (
+                <div className="glass-card">
+                  <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <CreditCard size={18} color="var(--color-success)" /> Your Payment Ledger
+                  </h3>
+
+                  {/* Desktop Table View */}
+                  <div className="data-table-container payment-ledger-table-desktop">
+                    <table className="data-table">
+                      <thead>
+                        <tr><th>Date</th><th>Type</th><th>Amount</th></tr>
+                      </thead>
+                      <tbody>
+                        {payments.length > 0 ? (
+                          payments.map(p => (
+                            <tr key={p.id}>
+                              <td>{new Date(p.paymentDate).toLocaleDateString()}</td>
+                              <td style={{ fontSize: '0.8rem' }}>
+                                {p.paymentType === 'CONTRACT_PAYMENT' ? '📅 Contract' : '🔧 Materials'}
+                              </td>
+                              <td>₹{p.amount.toFixed(2)}</td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="3" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '15px', fontSize: '0.85rem' }}>
+                              No logged payments found.
+                            </td>
+                          </tr>
                         )}
-                      </div>
-                    </div>
-                  )) : (
-                    <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '25px 15px', fontSize: '0.9rem' }}>
-                      No material bills generated.
-                    </div>
-                  )}
-                </div>
-              </div>
+                      </tbody>
+                    </table>
+                  </div>
 
-              {/* Payment Ledger */}
-              <div className="glass-card">
-                <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <CreditCard size={18} color="var(--color-success)" /> Your Payment Ledger
-                </h3>
-
-                {/* Desktop Table View */}
-                <div className="data-table-container payment-ledger-table-desktop">
-                  <table className="data-table">
-                    <thead>
-                      <tr><th>Date</th><th>Type</th><th>Amount</th></tr>
-                    </thead>
-                    <tbody>
-                      {payments.length > 0 ? payments.map(p => (
-                        <tr key={p.id}>
-                          <td>{new Date(p.paymentDate).toLocaleDateString()}</td>
-                          <td style={{ fontSize: '0.8rem' }}>
-                            {p.paymentType === 'CONTRACT_PAYMENT' ? '📅 Contract' : '🔧 Materials'}
-                          </td>
-                          <td>₹{p.amount.toFixed(2)}</td>
-                        </tr>
-                      )) : (
-                        <tr>
-                          <td colSpan="3" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '15px', fontSize: '0.85rem' }}>
-                            No logged payments found.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Mobile Activity History Style Cards */}
-                <div className="payment-ledger-cards-mobile">
-                  {payments.length > 0 ? payments.map(p => (
-                    <div key={p.id} className="ledger-card">
-                      <div className="ledger-card-top">
-                        <span className="ledger-card-date">{new Date(p.paymentDate).toLocaleString()}</span>
-                        <span className="badge badge-quotation">
-                          {p.paymentType === 'CONTRACT_PAYMENT' ? 'Contract' : 'Material'}
-                        </span>
+                  {/* Mobile Activity History Style Cards */}
+                  <div className="payment-ledger-cards-mobile">
+                    {payments.length > 0 ? (
+                      payments.map(p => (
+                        <div key={p.id} className="ledger-card">
+                          <div className="ledger-card-top">
+                            <span className="ledger-card-date">{new Date(p.paymentDate).toLocaleString()}</span>
+                            <span className="badge badge-quotation">
+                              {p.paymentType === 'CONTRACT_PAYMENT' ? 'Contract' : 'Material'}
+                            </span>
+                          </div>
+                          <div className="ledger-card-content">
+                            <strong className="ledger-card-title">
+                              {p.paymentType === 'CONTRACT_PAYMENT' ? 'Maintenance Contract Payment' : 'Material Bill Payment'}
+                            </strong>
+                            <span className="ledger-card-amount">₹{p.amount.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '25px 15px', fontSize: '0.9rem' }}>
+                        No logged payments found.
                       </div>
-                      <div className="ledger-card-content">
-                        <strong className="ledger-card-title">
-                          {p.paymentType === 'CONTRACT_PAYMENT' ? 'Maintenance Contract Payment' : 'Material Bill Payment'}
-                        </strong>
-                        <span className="ledger-card-amount">₹{p.amount.toFixed(2)}</span>
-                      </div>
-                    </div>
-                  )) : (
-                    <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '25px 15px', fontSize: '0.9rem' }}>
-                      No logged payments found.
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 
-          {/* ── PROFILE TAB (mobile-only, always hidden on desktop) ── */}
+          {/* ── PROFILE TAB (mobile-only, styled exactly like Admin Profile) ── */}
           <div className={`customer-profile-section ${mobileTab === 'profile' ? 'tab-active' : ''}`}>
+            <div className="owner-profile-container" style={{ width: '100%', padding: '0 4px 20px' }}>
 
-            {/* Avatar */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0 16px' }}>
-              <div style={{
-                width: 88, height: 88, borderRadius: '50%',
-                background: 'linear-gradient(135deg, #111 0%, #555 100%)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                marginBottom: 14, boxShadow: '0 8px 24px rgba(0,0,0,0.15)'
-              }}>
-                <span style={{ fontSize: '2rem', fontWeight: 700, color: '#fff', fontFamily: 'var(--font-title)' }}>
-                  {(user?.customerName || user?.username || '?')[0].toUpperCase()}
-                </span>
+              {/* ── Avatar & Client Info ── */}
+              <div className="opp-avatar-section">
+                <div className="opp-avatar-circle">
+                  <User size={50} color="#111111" strokeWidth={1.8} />
+                </div>
+                <h1 className="opp-admin-name">
+                  {(customerProfile?.name || user?.customerName || user?.username || 'CLIENT').toUpperCase()}
+                </h1>
+                <div className="opp-badge-row">
+                  <span className="opp-owner-badge">
+                    <Shield size={13} style={{ marginRight: '4px' }} /> Client Account
+                  </span>
+                </div>
+                <p className="opp-company-name">Prashansa Electrical Services</p>
               </div>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: 6, textAlign: 'center' }}>
-                {user?.customerName || user?.username}
-              </h2>
-            </div>
 
-            {/* Contract details (moved here from top banner on mobile) */}
-            <div className="glass-card">
-              <h4 style={{ marginBottom: 16, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <TrendingUp size={16} color="var(--color-primary)" /> Contract Details
-              </h4>
-              {contract ? (
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  {[
-                    { label: 'Plan Type', value: 'Monthly Package' },
-                    { label: 'Monthly Fee', value: `₹${contract.monthlyPaymentAmount.toFixed(2)}` },
-                    { label: 'Due Date', value: `${contract.monthlyPaymentDueDate}th of each month` },
-                    { label: 'Start Date', value: new Date(contract.startDate).toLocaleDateString() },
-                  ].map((row, i, arr) => (
-                    <div
-                      key={row.label}
-                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 0', borderBottom: i < arr.length - 1 ? '1px solid var(--card-border)' : 'none' }}
-                    >
-                      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{row.label}</span>
-                      <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{row.value}</span>
+              {/* ── Divider ── */}
+              <hr className="opp-divider" />
+
+              {/* ── ACCOUNT SECTION ── */}
+              <div className="opp-account-wrapper">
+                <h3 className="opp-section-heading">ACCOUNT</h3>
+
+                {/* 👤 Contact Details Card (No Edit Button) */}
+                <div className="opp-card opp-personal-info-card">
+                  <div className="opp-card-header">
+                    <div className="opp-card-title-group">
+                      <div className="opp-icon-badge">
+                        <User size={18} />
+                      </div>
+                      <span className="opp-card-title">Contact Information</span>
                     </div>
-                  ))}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 0' }}>
-                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Status</span>
-                    <span className={`badge ${user?.customerStatus === 'INACTIVE' ? 'badge-unpaid' : 'badge-completed'}`}>
-                      {user?.customerStatus === 'INACTIVE' ? 'INACTIVE' : contract.status}
-                    </span>
+                  </div>
+
+                  <div className="opp-info-body">
+                    <div className="opp-info-row">
+                      <span className="opp-info-label">Contact Person</span>
+                      <span className="opp-info-value">
+                        {customerProfile?.contactPerson || customerProfile?.name || user?.customerName || user?.username || '—'}
+                      </span>
+                    </div>
+                    <div className="opp-info-row">
+                      <span className="opp-info-label">Portal Username</span>
+                      <span className="opp-info-value">
+                        {user?.username || '—'}
+                      </span>
+                    </div>
+                    <div className="opp-info-row">
+                      <span className="opp-info-label">Email</span>
+                      <span className="opp-info-value opp-info-link">
+                        {customerProfile?.email || '—'}
+                      </span>
+                    </div>
+                    <div className="opp-info-row">
+                      <span className="opp-info-label">Mobile No.</span>
+                      <span className="opp-info-value">
+                        {customerProfile?.phone || '—'}
+                      </span>
+                    </div>
+                    {customerProfile?.address && (
+                      <div className="opp-info-row">
+                        <span className="opp-info-label">Address</span>
+                        <span className="opp-info-value">
+                          {customerProfile.address}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
-              ) : (
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                  No active contract. Please contact Prashansha Electrical Services.
-                </p>
-              )}
-            </div>
 
-            {/* Logout */}
-            <button className="mobile-profile-logout" onClick={logout}>
-              <LogOut size={18} /> Log Out
-            </button>
+                {/* 📄 Contract Summary Card */}
+                {contract && (
+                  <div className="opp-card opp-personal-info-card">
+                    <div className="opp-card-header">
+                      <div className="opp-card-title-group">
+                        <div className="opp-icon-badge">
+                          <TrendingUp size={18} />
+                        </div>
+                        <span className="opp-card-title">Maintenance Contract</span>
+                      </div>
+                      <span className={`badge ${user?.customerStatus === 'INACTIVE' ? 'badge-unpaid' : 'badge-completed'}`}>
+                        {user?.customerStatus === 'INACTIVE' ? 'INACTIVE' : contract.status}
+                      </span>
+                    </div>
+
+                    <div className="opp-info-body">
+                      <div className="opp-info-row">
+                        <span className="opp-info-label">Monthly Package Fee</span>
+                        <span className="opp-info-value" style={{ color: 'var(--color-primary)' }}>
+                          ₹{contract.monthlyPaymentAmount.toFixed(2)} / month
+                        </span>
+                      </div>
+                      <div className="opp-info-row">
+                        <span className="opp-info-label">Monthly Payment Due Date</span>
+                        <span className="opp-info-value">
+                          {contract.monthlyPaymentDueDate}th of each month
+                        </span>
+                      </div>
+                      <div className="opp-info-row">
+                        <span className="opp-info-label">Contract Start Date</span>
+                        <span className="opp-info-value">
+                          {new Date(contract.startDate).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 🚪 Log Out Button */}
+                <button
+                  type="button"
+                  className="opp-logout-action-btn"
+                  onClick={logout}
+                >
+                  <LogOut size={18} />
+                  <span>Log Out</span>
+                </button>
+              </div>
+
+            </div>
           </div>
 
         </div>

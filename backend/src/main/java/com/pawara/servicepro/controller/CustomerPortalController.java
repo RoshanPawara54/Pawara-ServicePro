@@ -56,4 +56,19 @@ public class CustomerPortalController {
 
         return ResponseEntity.ok(payments);
     }
+
+    /**
+     * Get the logged-in customer's profile details.
+     */
+    @GetMapping("/api/customer/profile")
+    public ResponseEntity<?> getMyProfile() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Optional<User> userOpt = userRepository.findByUsername(username);
+
+        if (userOpt.isEmpty() || userOpt.get().getCustomer() == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Customer account not found"));
+        }
+
+        return ResponseEntity.ok(userOpt.get().getCustomer());
+    }
 }

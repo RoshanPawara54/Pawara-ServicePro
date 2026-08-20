@@ -22,21 +22,21 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor to handle 401 Unauthorized
+// Response interceptor to handle 401 Unauthorized (Expired or invalid token)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-      // Clear localStorage
+    if (error.response && error.response.status === 401) {
+      // Clear authentication credentials
       localStorage.removeItem('token');
       localStorage.removeItem('role');
       localStorage.removeItem('username');
       localStorage.removeItem('customerId');
       localStorage.removeItem('customerName');
+      localStorage.removeItem('customerStatus');
 
-      // Alert the user and redirect to login if we are not already on the login page
-      if (window.location.pathname !== '/login') {
-        alert('Your session has expired. Please log in again.');
+      // Seamlessly redirect to login if not already there
+      if (window.location.pathname !== '/login' && window.location.pathname !== '/reset-password') {
         window.location.href = '/login';
       }
     }

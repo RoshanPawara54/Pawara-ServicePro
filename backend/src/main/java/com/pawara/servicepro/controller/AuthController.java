@@ -55,7 +55,34 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        Optional<User> userOpt = userRepository.findByUsername(request.getUsername());
+        if (request.getUsername() == null || request.getPassword() == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Username and password are required"));
+        }
+
+        String input = request.getUsername().trim();
+        Optional<User> userOpt = userRepository.findByUsername(input);
+
+        if (userOpt.isEmpty()) {
+            userOpt = userRepository.findAll().stream()
+                    .filter(u -> u.getUsername() != null && u.getUsername().equalsIgnoreCase(input))
+                    .findFirst();
+        }
+
+        // Fallback 1: Customer email
+        if (userOpt.isEmpty()) {
+            userOpt = userRepository.findAll().stream()
+                    .filter(u -> u.getCustomer() != null && u.getCustomer().getEmail() != null && u.getCustomer().getEmail().equalsIgnoreCase(input))
+                    .findFirst();
+        }
+
+        // Fallback 2: Customer Name (e.g. "Sai Hospital" or "sai hospital")
+        if (userOpt.isEmpty()) {
+            userOpt = userRepository.findAll().stream()
+                    .filter(u -> u.getCustomer() != null && u.getCustomer().getName() != null && 
+                            (u.getCustomer().getName().equalsIgnoreCase(input) || 
+                             u.getCustomer().getName().toLowerCase().replaceAll("\\s+", "").equals(input.toLowerCase().replaceAll("\\s+", ""))))
+                    .findFirst();
+        }
 
         if (userOpt.isEmpty() || !passwordEncoder.matches(request.getPassword(), userOpt.get().getPassword())) {
             return ResponseEntity.badRequest().body(Map.of("message", "Invalid username or password"));
@@ -63,7 +90,7 @@ public class AuthController {
 
         User user = userOpt.get();
         if (user.getCustomer() != null && "TRASHED".equals(user.getCustomer().getStatus())) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Your Account is no longer active.Please contact Prashansha Electical Services."));
+            return ResponseEntity.badRequest().body(Map.of("message", "Your Account is no longer active. Please contact Prashansha Electrical Services."));
         }
 
         String token = tokenProvider.generateToken(user.getUsername(), user.getRole());
