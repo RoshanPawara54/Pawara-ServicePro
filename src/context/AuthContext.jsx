@@ -1,5 +1,11 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { loginUser, validateToken, forgotPassword as apiForgotPassword, resetPassword as apiResetPassword } from '../services/authService';
+import {
+  loginUser,
+  validateToken,
+  forgotPassword as apiForgotPassword,
+  resetPassword as apiResetPassword,
+  validateResetToken as apiValidateResetToken
+} from '../services/authService';
 
 const AuthContext = createContext(null);
 
@@ -72,6 +78,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('username');
     localStorage.removeItem('customerId');
     localStorage.removeItem('customerName');
+    localStorage.removeItem('customerStatus');
     setUser(null);
   };
 
@@ -79,12 +86,16 @@ export const AuthProvider = ({ children }) => {
     return await apiForgotPassword(email);
   };
 
+  const validateResetToken = async (token) => {
+    return await apiValidateResetToken(token);
+  };
+
   const resetPassword = async (token, newPassword) => {
     return await apiResetPassword(token, newPassword);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, forgotPassword, resetPassword }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, forgotPassword, validateResetToken, resetPassword }}>
       {children}
     </AuthContext.Provider>
   );

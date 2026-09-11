@@ -67,6 +67,7 @@ public class CustomerController {
 
         User user = User.builder()
                 .username(username)
+                .email(request.getEmail())
                 .password(passwordEncoder.encode("123")) // default password is 123
                 .role("CUSTOMER")
                 .customer(savedCustomer)
@@ -113,23 +114,34 @@ public class CustomerController {
         if (request.getAddress() != null) customer.setAddress(request.getAddress());
         Customer updatedCustomer = customerRepository.save(customer);
 
-        // Update portal login username if provided
-        if (request.getUsername() != null && !request.getUsername().trim().isEmpty()) {
-            String newUsername = request.getUsername().trim().toLowerCase();
-            Optional<User> customerUserOpt = userRepository.findAll().stream()
-                    .filter(u -> u.getCustomer() != null && id.equals(u.getCustomer().getId()))
-                    .findFirst();
+        // Update portal login username or email if provided
+        Optional<User> customerUserOpt = userRepository.findAll().stream()
+                .filter(u -> u.getCustomer() != null && id.equals(u.getCustomer().getId()))
+                .findFirst();
 
-            if (customerUserOpt.isPresent()) {
-                User u = customerUserOpt.get();
+        if (customerUserOpt.isPresent()) {
+            User u = customerUserOpt.get();
+            boolean userChanged = false;
+
+            if (request.getEmail() != null && !request.getEmail().equals(u.getEmail())) {
+                u.setEmail(request.getEmail().trim());
+                userChanged = true;
+            }
+
+            if (request.getUsername() != null && !request.getUsername().trim().isEmpty()) {
+                String newUsername = request.getUsername().trim().toLowerCase();
                 if (!u.getUsername().equalsIgnoreCase(newUsername)) {
                     Optional<User> existing = userRepository.findByUsername(newUsername);
                     if (existing.isPresent() && !existing.get().getId().equals(u.getId())) {
                         return ResponseEntity.badRequest().body(Map.of("message", "Username '" + newUsername + "' is already taken."));
                     }
                     u.setUsername(newUsername);
-                    userRepository.save(u);
+                    userChanged = true;
                 }
+            }
+
+            if (userChanged) {
+                userRepository.save(u);
             }
         }
 

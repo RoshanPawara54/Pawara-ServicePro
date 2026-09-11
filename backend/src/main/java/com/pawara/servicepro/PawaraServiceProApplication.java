@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.Optional;
 
 @SpringBootApplication
 public class PawaraServiceProApplication {
@@ -30,14 +31,22 @@ public class PawaraServiceProApplication {
 			PasswordEncoder passwordEncoder) {
 		return (args) -> {
 			// 1. Seed Owner (admin / 123)
-			if (userRepository.findByUsername("admin").isEmpty()) {
+			Optional<User> adminOpt = userRepository.findByUsername("admin");
+			if (adminOpt.isEmpty()) {
 				User owner = User.builder()
 						.username("admin")
+						.email("jankirampawara@gmail.com")
 						.password(passwordEncoder.encode("123"))
 						.role("OWNER")
 						.build();
 				userRepository.save(owner);
 				System.out.println("Seeded owner account: admin / 123");
+			} else {
+				User admin = adminOpt.get();
+				if (admin.getEmail() == null || admin.getEmail().isBlank()) {
+					admin.setEmail("jankirampawara@gmail.com");
+					userRepository.save(admin);
+				}
 			}
 
 			// 2. Seed Customer Data if empty
@@ -76,18 +85,21 @@ public class PawaraServiceProApplication {
 				// User accounts for customers (username matches lowercase stripped name, password is 123)
 				userRepository.save(User.builder()
 						.username("tirupatihospital")
+						.email("contact@tirupati.org")
 						.password(passwordEncoder.encode("123"))
 						.role("CUSTOMER")
 						.customer(tirupati)
 						.build());
 				userRepository.save(User.builder()
 						.username("saihospital")
+						.email("admin@saihospital.com")
 						.password(passwordEncoder.encode("123"))
 						.role("CUSTOMER")
 						.customer(sai)
 						.build());
 				userRepository.save(User.builder()
 						.username("abchospital")
+						.email("info@abchospital.in")
 						.password(passwordEncoder.encode("123"))
 						.role("CUSTOMER")
 						.customer(abc)

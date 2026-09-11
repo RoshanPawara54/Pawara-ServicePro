@@ -272,33 +272,37 @@ export default function Login() {
                 background: 'rgba(255, 255, 255, 0.02)',
                 border: '1px solid rgba(255, 255, 255, 0.05)',
                 borderRadius: '8px',
-                padding: '15px',
+                padding: '12px 15px',
                 fontSize: '0.85rem',
                 color: 'var(--text-muted)',
                 marginBottom: '20px'
               }}>
-                <span style={{ fontWeight: '600', color: 'var(--color-warning)', display: 'block', marginBottom: '5px' }}>
-                  ℹ️ recovery note:
+                <span style={{ fontWeight: '600', color: 'var(--color-info)', display: 'block', marginBottom: '4px' }}>
+                  🔒 Security Notice:
                 </span>
-                For offline recovery, please reach out directly to the business Owner to request a password override.
-                In development mode, checking the backend console output prints the reset URL.
+                If an account matches your entry, a single-use password reset link will be sent to the registered email address. This link remains active for 1 hour.
               </div>
 
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                 <button
                   type="button"
                   className="btn-secondary btn-small"
-                  onClick={() => setShowForgotModal(false)}
+                  onClick={() => {
+                    setShowForgotModal(false);
+                    setForgotError('');
+                    setForgotSuccess('');
+                    setForgotEmail('');
+                  }}
                   disabled={forgotLoading}
                 >
-                  Cancel
+                  Close
                 </button>
                 <button
                   type="submit"
                   className="btn-primary btn-small"
                   disabled={forgotLoading}
                 >
-                  {forgotLoading ? <Loader size={16} className="spin" /> : 'Get Reset Link'}
+                  {forgotLoading ? <Loader size={16} className="spin" /> : 'Send Reset Link'}
                 </button>
               </div>
             </form>

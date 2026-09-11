@@ -3,17 +3,19 @@ package com.pawara.servicepro.controller;
 import com.pawara.servicepro.model.User;
 import com.pawara.servicepro.repository.UserRepository;
 import com.pawara.servicepro.security.JwtTokenProvider;
+import com.pawara.servicepro.dto.ForgotPasswordRequest;
+import com.pawara.servicepro.dto.ResetPasswordRequest;
+import com.pawara.servicepro.dto.TokenValidationResponse;
+import com.pawara.servicepro.service.PasswordResetService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -23,6 +25,7 @@ public class AuthController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
+    private final PasswordResetService passwordResetService;
 
     @GetMapping("/validate")
     public ResponseEntity<?> validateToken() {
@@ -60,19 +63,11 @@ public class AuthController {
         }
 
         String input = request.getUsername().trim();
-        Optional<User> userOpt = userRepository.findByUsername(input);
-
-        if (userOpt.isEmpty()) {
-            userOpt = userRepository.findAll().stream()
-                    .filter(u -> u.getUsername() != null && u.getUsername().equalsIgnoreCase(input))
-                    .findFirst();
-        }
+        Optional<User> userOpt = userRepository.findByUsernameIgnoreCase(input);
 
         // Fallback 1: Customer email
         if (userOpt.isEmpty()) {
-            userOpt = userRepository.findAll().stream()
-                    .filter(u -> u.getCustomer() != null && u.getCustomer().getEmail() != null && u.getCustomer().getEmail().equalsIgnoreCase(input))
-                    .findFirst();
+            userOpt = userRepository.findByCustomer_EmailIgnoreCase(input);
         }
 
         // Fallback 2: Customer Name (e.g. "Sai Hospital" or "sai hospital")
@@ -109,60 +104,35 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> body) {
-        String usernameOrEmail = body.get("email"); // Front-end will pass the username/email here
-        Optional<User> userOpt = userRepository.findByUsername(usernameOrEmail);
-
-        // Fallback check: look up by customer email if user is a customer
-        if (userOpt.isEmpty()) {
-            userOpt = userRepository.findAll().stream()
-                    .filter(u -> u.getCustomer() != null && usernameOrEmail.equalsIgnoreCase(u.getCustomer().getEmail()))
-                    .findFirst();
+    public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        if (request != null && request.getEmail() != null) {
+            passwordResetService.processForgotPassword(request.getEmail());
         }
 
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "User with this email/username was not found."));
-        }
-
-        User user = userOpt.get();
-        String token = UUID.randomUUID().toString();
-        user.setResetToken(token);
-        user.setResetTokenExpiry(LocalDateTime.now().plusHours(1)); // 1 hour expiry
-        userRepository.save(user);
-
-        // Log the reset token/link to console (simulating SMTP email send)
-        String resetUrl = "http://localhost:5173/reset-password?token=" + token;
-        System.out.println("==================================================");
-        System.out.println("PASSWORD RESET REQUEST");
-        System.out.println("User: " + user.getUsername());
-        System.out.println("Reset URL: " + resetUrl);
-        System.out.println("==================================================");
-
+        // Always return generic response to prevent account enumeration
         return ResponseEntity.ok(Map.of(
-            "message", "Reset link generated. In development, check the Spring Boot application console for the reset link!",
-            "token", token
+                "message", "If an account exists for this email, a password reset link has been sent."
         ));
+    }
+
+    @GetMapping("/reset-password/validate")
+    public ResponseEntity<TokenValidationResponse> validateResetToken(@RequestParam(value = "token", required = false) String token) {
+        boolean isValid = passwordResetService.validateResetToken(token);
+        return ResponseEntity.ok(TokenValidationResponse.builder().valid(isValid).build());
     }
 
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
-        Optional<User> userOpt = userRepository.findByResetToken(request.getToken());
-
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Invalid reset token."));
+        if (request == null || request.getToken() == null || request.getNewPassword() == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Token and new password are required."));
         }
 
-        User user = userOpt.get();
-        if (user.getResetTokenExpiry() == null || user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Reset token has expired."));
+        try {
+            passwordResetService.resetPassword(request.getToken(), request.getNewPassword());
+            return ResponseEntity.ok(Map.of("message", "Password has been reset successfully. You can now log in."));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
         }
-
-        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        user.setResetToken(null);
-        user.setResetTokenExpiry(null);
-        userRepository.save(user);
-
-        return ResponseEntity.ok(Map.of("message", "Password reset successfully. You can now login."));
     }
 
     @PostMapping("/change-password")
@@ -194,8 +164,8 @@ public class AuthController {
             }
         }
 
-        if (newPassword == null || newPassword.length() < 4) {
-            return ResponseEntity.badRequest().body(Map.of("message", "New password must be at least 4 characters"));
+        if (newPassword == null || newPassword.length() < 8) {
+            return ResponseEntity.badRequest().body(Map.of("message", "New password must be at least 8 characters"));
         }
 
         user.setPassword(passwordEncoder.encode(newPassword));
@@ -207,11 +177,5 @@ public class AuthController {
     public static class LoginRequest {
         private String username;
         private String password;
-    }
-
-    @Data
-    public static class ResetPasswordRequest {
-        private String token;
-        private String newPassword;
     }
 }

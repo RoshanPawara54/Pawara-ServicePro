@@ -18,6 +18,9 @@ public class User {
     @Column(nullable = false, unique = true)
     private String username;
 
+    @Column(name = "email")
+    private String email;
+
     @Column(nullable = false)
     private String password; // BCrypt hashed
 
@@ -28,8 +31,8 @@ public class User {
     @JoinColumn(name = "customer_id", nullable = true)
     private Customer customer;
 
-    @Column(name = "reset_token")
-    private String resetToken;
+    @Column(name = "reset_token_hash")
+    private String resetTokenHash;
 
     @Column(name = "reset_token_expiry")
     private LocalDateTime resetTokenExpiry;
