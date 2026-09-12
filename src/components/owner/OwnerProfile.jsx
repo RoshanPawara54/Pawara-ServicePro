@@ -157,7 +157,7 @@ export default function OwnerProfile() {
       {/* ── Divider ── */}
       <hr className="opp-divider" />
 
-      {/* Success Notification */}
+      {/* Success Alert */}
       {infoSuccess && (
         <div className="opp-alert-success">
           <Check size={16} />

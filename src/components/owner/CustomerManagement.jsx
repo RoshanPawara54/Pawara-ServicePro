@@ -18,7 +18,9 @@ import {
   Printer,
   Edit,
   ArrowLeft,
-  Download
+  Download,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 export default function CustomerManagement() {
@@ -51,6 +53,8 @@ export default function CustomerManagement() {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   
   // Contract form fields
   const [hasContract, setHasContract] = useState(true);
@@ -69,9 +73,7 @@ export default function CustomerManagement() {
   const [editAddress, setEditAddress] = useState('');
   const [editUsername, setEditUsername] = useState('');
 
-  // Modal / reset states
-  const [showResetModal, setShowResetModal] = useState(false);
-  const [resetPasswordVal, setResetPasswordVal] = useState('123');
+  // Credentials state
   const [credentials, setCredentials] = useState(null);
 
   // Record payment form states
@@ -205,8 +207,13 @@ export default function CustomerManagement() {
 
   const handleAddCustomer = async (e) => {
     e.preventDefault();
-    if (!name) {
+    if (!name || !name.trim()) {
       setError('Please enter a Customer Name');
+      return;
+    }
+
+    if (!password || password.trim().length < 8) {
+      setError('Please enter an initial password of at least 8 characters');
       return;
     }
 
@@ -214,12 +221,13 @@ export default function CustomerManagement() {
     setSuccess('');
 
     const payload = {
-      name,
+      name: name.trim(),
       customerType,
       contactPerson,
       phone,
       email,
       address,
+      password: password.trim(),
       contract: hasContract ? {
         startDate,
         endDate,
@@ -231,7 +239,7 @@ export default function CustomerManagement() {
     try {
       const res = await api.post('/api/owner/customers', payload);
       
-      setSuccess(`Customer created successfully! Generated username: "${res.data.generatedUsername}" (Password: "123")`);
+      setSuccess(`Customer created successfully! Generated portal username: "${res.data.generatedUsername}"`);
       setShowAddForm(false);
       
       // Reset fields
@@ -240,21 +248,9 @@ export default function CustomerManagement() {
       setPhone('');
       setEmail('');
       setAddress('');
+      setPassword('');
       
       fetchCustomers();
-    } catch (err) {
-      setError(err.response?.data?.message || err.message);
-    }
-  };
-
-  const handleResetPasswordSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await api.post(`/api/owner/customers/${selectedCustomerId}/reset-password`, { password: resetPasswordVal });
-      
-      setSuccess(`Password updated successfully to "${resetPasswordVal}"`);
-      setShowResetModal(false);
-      setResetPasswordVal('123');
     } catch (err) {
       setError(err.response?.data?.message || err.message);
     }
@@ -797,7 +793,7 @@ export default function CustomerManagement() {
         <div className="glass-card" style={{ marginBottom: '30px' }}>
           <h3 style={{ marginBottom: '20px' }}>Register New Maintenance Customer</h3>
           <form onSubmit={handleAddCustomer}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '25px' }}>
+            <div className="cust-add-form-grid">
               <div className="form-group">
                 <label className="form-label">Customer Name (e.g. Hospital Name)</label>
                 <input className="form-input" type="text" placeholder="e.g. Tirupati Hospital" value={name} onChange={(e) => setName(e.target.value)} required />
@@ -824,7 +820,41 @@ export default function CustomerManagement() {
                 <label className="form-label">Email Address</label>
                 <input className="form-input" type="email" placeholder="client@domain.com" value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
-              <div className="form-group" style={{ gridColumn: 'span 2' }}>
+              <div className="form-group">
+                <label className="form-label">Initial Portal Password *</label>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    className="form-input" 
+                    type={showPassword ? 'text' : 'password'} 
+                    placeholder="Minimum 8 characters" 
+                    value={password} 
+                    onChange={(e) => setPassword(e.target.value)} 
+                    required 
+                    style={{ paddingRight: '40px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-muted)',
+                      cursor: 'pointer',
+                      padding: '4px',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+              <div className="form-group cust-form-full-span">
                 <label className="form-label">Address</label>
                 <input className="form-input" type="text" placeholder="Full street address" value={address} onChange={(e) => setAddress(e.target.value)} />
               </div>
@@ -839,7 +869,7 @@ export default function CustomerManagement() {
             {hasContract && (
               <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '20px', marginBottom: '25px' }}>
                 <h4 style={{ marginBottom: '15px', color: 'var(--color-primary)' }}>Monthly Maintenance Contract Settings</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+                <div className="cust-contract-form-grid">
                   <div className="form-group">
                     <label className="form-label">Contract Start Date</label>
                     <input className="form-input" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
@@ -860,7 +890,7 @@ export default function CustomerManagement() {
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+            <div className="cust-form-actions">
               <button type="button" className="btn-secondary" onClick={() => setShowAddForm(false)}>Cancel</button>
               <button type="submit" className="btn-primary">Register Customer</button>
             </div>
@@ -883,11 +913,8 @@ export default function CustomerManagement() {
                 </span>
               </div>
 
-              {/* Action Buttons: Reset Pass, Edit, Record Payment */}
+              {/* Action Buttons: Edit, Record Payment */}
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-                <button className="btn-secondary btn-small" onClick={() => setShowResetModal(true)} title="Reset Login Password">
-                  <KeyRound size={14} /> Reset Pass
-                </button>
                 <button className="btn-secondary btn-small" onClick={handleOpenEditCustomer} title="Edit Customer Details">
                   <Edit size={14} /> Edit
                 </button>
@@ -1524,24 +1551,7 @@ export default function CustomerManagement() {
         </div>
       )}
 
-      {/* Admin Reset Password Modal */}
-      {showResetModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '400px' }}>
-            <h3 style={{ marginBottom: '15px' }}>Reset Client Password</h3>
-            <form onSubmit={handleResetPasswordSubmit}>
-              <div className="form-group">
-                <label className="form-label">Specify New Password</label>
-                <input className="form-input" type="text" value={resetPasswordVal} onChange={(e) => setResetPasswordVal(e.target.value)} required />
-              </div>
-              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
-                <button type="button" className="btn-secondary btn-small" onClick={() => setShowResetModal(false)}>Cancel</button>
-                <button type="submit" className="btn-primary btn-small">Override Password</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+
 
       {/* Log Payment Modal */}
       {showPaymentModal && (
@@ -1607,7 +1617,7 @@ export default function CustomerManagement() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
                 {billItems.map((item, idx) => (
-                  <div key={idx} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr auto', gap: '8px', alignItems: 'end' }}>
+                  <div key={idx} className="bill-item-row">
                     <div>
                       <input className="form-input" type="text" placeholder="Material Name" value={item.itemName} onChange={(e) => handleItemChange(idx, 'itemName', e.target.value)} required />
                     </div>

@@ -7,7 +7,6 @@ import {
   FileText, 
   UserPlus, 
   Search, 
-  Bell, 
   CheckCircle, 
   ArrowRight,
   TrendingUp,
@@ -20,9 +19,6 @@ export default function OwnerDashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
-  // Real-time notifications state
-  const [newRequestAlerts, setNewRequestAlerts] = useState([]);
 
   // Search autocomplete states
   const [searchVal, setSearchVal] = useState('');
@@ -68,46 +64,15 @@ export default function OwnerDashboard() {
     fetchStats();
     loadSearchData();
 
-    // Subscribe to real-time updates via Server-Sent Events (SSE)
-    const eventSource = new EventSource('http://localhost:8080/api/notifications/subscribe');
-
-    eventSource.addEventListener('INIT', (e) => {
-      console.log('SSE connection initialized:', e.data);
-    });
-
-    eventSource.addEventListener('NEW_REQUEST', (e) => {
-      try {
-        const payload = JSON.parse(e.data);
-        console.log('Received live request via SSE:', payload);
-        
-        // Show visual banner alert
-        setNewRequestAlerts(prev => [payload, ...prev]);
-        
-        // Refresh dashboard stats to update counts
-        fetchStats();
-      } catch (err) {
-        console.error('Error parsing SSE payload:', err);
-      }
-    });
-
-    eventSource.onerror = (err) => {
-      console.log('SSE connection error, closing or retrying...');
-    };
-
     const handleOutsideClick = () => {
       setSuggestions([]);
     };
     document.addEventListener('click', handleOutsideClick);
 
     return () => {
-      eventSource.close();
       document.removeEventListener('click', handleOutsideClick);
     };
   }, []);
-
-  const handleDismissAlert = (id) => {
-    setNewRequestAlerts(prev => prev.filter(alert => alert.requestId !== id));
-  };
 
   const handleSearchInputChange = (val) => {
     setSearchVal(val);
@@ -359,52 +324,6 @@ export default function OwnerDashboard() {
           )}
         </div>
       </div>
-
-      {/* SSE Real-Time Notification Banners */}
-      {newRequestAlerts.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '30px' }}>
-          {newRequestAlerts.map((alert) => (
-            <div key={alert.requestId} className="glass-card" style={{
-              background: 'rgba(139, 92, 246, 0.15)',
-              borderColor: 'rgba(139, 92, 246, 0.4)',
-              boxShadow: '0 0 15px rgba(139, 92, 246, 0.25)',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              animation: 'slideIn 0.3s ease-out',
-              padding: '16px 24px',
-              borderRadius: '12px'
-            }}>
-              <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                <Bell size={24} color="#8b5cf6" className="bounce" />
-                <div>
-                  <strong style={{ color: 'var(--text-main)' }}>New Maintenance Request Received!</strong>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-main)', marginTop: '2px' }}>
-                    Customer: <strong>{alert.customerName}</strong> ({alert.customerType}) — <em>"{alert.description}"</em>
-                  </div>
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button 
-                  className="btn-primary btn-small" 
-                  onClick={() => {
-                    handleDismissAlert(alert.requestId);
-                    navigate('/maintenance/' + alert.customerId);
-                  }}
-                >
-                  View Profile
-                </button>
-                <button 
-                  className="btn-secondary btn-small"
-                  onClick={() => handleDismissAlert(alert.requestId)}
-                >
-                  Dismiss
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
 
       {/* Quick Action Buttons */}
       <div className="glass-card" style={{ marginBottom: '35px' }}>

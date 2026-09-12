@@ -2,7 +2,6 @@ package com.pawara.servicepro.controller;
 
 import com.pawara.servicepro.model.*;
 import com.pawara.servicepro.repository.*;
-import com.pawara.servicepro.service.NotificationService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +17,6 @@ public class RequestController {
     private final MaintenanceRequestRepository requestRepository;
     private final CustomerRepository customerRepository;
     private final UserRepository userRepository;
-    private final NotificationService notificationService;
     private final com.pawara.servicepro.service.ActivityLogService activityLogService;
 
     // --- Customer APIs ---
@@ -61,16 +59,6 @@ public class RequestController {
                 .build();
 
         MaintenanceRequest savedRequest = requestRepository.save(request);
-
-        // Notify Owner in real-time via SSE
-        Map<String, Object> notificationPayload = new HashMap<>();
-        notificationPayload.put("requestId", savedRequest.getId());
-        notificationPayload.put("customerName", customer.getName());
-        notificationPayload.put("customerType", customer.getCustomerType());
-        notificationPayload.put("description", savedRequest.getDescription());
-        notificationPayload.put("createdAt", savedRequest.getCreatedAt().toString());
-
-        notificationService.notifyOwner("NEW_REQUEST", notificationPayload);
 
         return ResponseEntity.ok(savedRequest);
     }

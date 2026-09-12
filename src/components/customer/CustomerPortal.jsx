@@ -173,8 +173,8 @@ export default function CustomerPortal() {
 
   return (
     <div>
-      {/* ── MOBILE STICKY TOP BAR: Module Name ── */}
-      <div className="mobile-sticky-page-header no-print">
+      {/* ── MOBILE STICKY TOP BAR: Module Name (Mobile Only) ── */}
+      <div className="mobile-only-header mobile-sticky-page-header no-print">
         <h1 style={{ margin: 0, fontSize: '1.45rem', fontWeight: 700, color: 'var(--text-main)' }}>
           {mobileTab === 'bills' ? 'Billing' : (mobileTab === 'profile' ? 'Profile' : 'Client Service Portal')}
         </h1>
@@ -351,7 +351,7 @@ export default function CustomerPortal() {
           </div>
 
           {/* ── 2-COLUMN GRID (Desktop) / TAB SECTIONS (Mobile) ── */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '30px', alignItems: 'start' }}>
+          <div className="customer-portal-main-grid">
 
             {/* LEFT COLUMN — Home tab on mobile */}
             <div
@@ -427,191 +427,184 @@ export default function CustomerPortal() {
             {/* RIGHT COLUMN — Billing tab on mobile / right column on desktop */}
             <div
               className={`customer-bills-section ${mobileTab === 'bills' ? 'tab-active' : ''}`}
-              style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}
             >
-              {/* ── BILLING SUB-TAB SWITCHER (Material Invoices & Payment Ledger) ── */}
-              <div className="shop-tab-switcher customer-billing-tab-switcher">
-                <button
-                  type="button"
-                  className={`shop-tab-btn ${billingSubTab === 'invoices' ? 'active' : ''}`}
-                  onClick={() => setBillingSubTab('invoices')}
-                >
-                  Material Invoices
-                </button>
-                <button
-                  type="button"
-                  className={`shop-tab-btn ${billingSubTab === 'ledger' ? 'active' : ''}`}
-                  onClick={() => setBillingSubTab('ledger')}
-                >
-                  Payment Ledger
-                </button>
-              </div>
+              <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {/* ── BILLING SUB-TAB SWITCHER (Material Invoices & Payment Ledger) ── */}
+                <div className="shop-tab-switcher customer-billing-tab-switcher">
+                  <button
+                    type="button"
+                    className={`shop-tab-btn ${billingSubTab === 'invoices' ? 'active' : ''}`}
+                    onClick={() => setBillingSubTab('invoices')}
+                  >
+                    Material Invoices
+                  </button>
+                  <button
+                    type="button"
+                    className={`shop-tab-btn ${billingSubTab === 'ledger' ? 'active' : ''}`}
+                    onClick={() => setBillingSubTab('ledger')}
+                  >
+                    Payment Ledger
+                  </button>
+                </div>
 
-              {/* Material Invoices Sub-tab */}
-              {billingSubTab === 'invoices' && (
-                <div className="glass-card">
-                  <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <FileText size={18} color="var(--color-primary)" /> Material Invoices (Uncovered Cost)
-                  </h3>
+                {/* Material Invoices Sub-tab */}
+                {billingSubTab === 'invoices' && (
+                  <>
+                    {/* Desktop Table View */}
+                    <div className="data-table-container customer-bills-table-desktop">
+                      <table className="data-table">
+                        <thead>
+                          <tr>
+                            <th>Invoice No</th><th>Amount</th><th>Status</th><th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {bills.length > 0 ? bills.map(b => (
+                            <tr key={b.id}>
+                              <td><strong>{b.billNumber}</strong></td>
+                              <td>₹{b.totalAmount.toFixed(2)}</td>
+                              <td>
+                                <span className={`badge ${b.status === 'PAID' ? 'badge-completed' : (b.status === 'PENDING_APPROVAL' ? 'badge-pending' : 'badge-unpaid')}`}>
+                                  {b.status === 'PENDING_APPROVAL' ? 'PENDING APPROVAL' : b.status}
+                                </span>
+                              </td>
+                              <td>
+                                <div className="cust-bill-actions">
+                                  <button className="btn-secondary btn-small" onClick={() => setSelectedBillDetail(b)}>View</button>
+                                  <button className="btn-secondary btn-small" onClick={() => handleDownloadBillPDF(b.id, b)}>
+                                    <Download size={14} /> PDF
+                                  </button>
+                                  {b.status === 'UNPAID' && (
+                                    <button
+                                      className="btn-primary btn-small"
+                                      onClick={() => handlePayBillCustomer(b.id)}
+                                      style={{ background: '#047857', borderColor: '#047857', padding: '6px 10px' }}
+                                    >
+                                      Tick Paid
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          )) : (
+                            <tr>
+                              <td colSpan="4" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '15px', fontSize: '0.85rem' }}>
+                                No material bills generated.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
 
-                  {/* Desktop Table View */}
-                  <div className="data-table-container customer-bills-table-desktop">
-                    <table className="data-table">
-                      <thead>
-                        <tr>
-                          <th>Invoice No</th><th>Amount</th><th>Status</th><th>Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {bills.length > 0 ? bills.map(b => (
-                          <tr key={b.id}>
-                            <td><strong>{b.billNumber}</strong></td>
-                            <td>₹{b.totalAmount.toFixed(2)}</td>
-                            <td>
+                    {/* Mobile Cart View */}
+                    <div className="customer-bills-cards-mobile">
+                      {bills.length > 0 ? (
+                        bills.map(b => (
+                          <div key={b.id} className="cust-bill-card">
+                            <div className="cust-bill-card-header">
+                              <strong className="cust-bill-card-number">{b.billNumber}</strong>
                               <span className={`badge ${b.status === 'PAID' ? 'badge-completed' : (b.status === 'PENDING_APPROVAL' ? 'badge-pending' : 'badge-unpaid')}`}>
                                 {b.status === 'PENDING_APPROVAL' ? 'PENDING APPROVAL' : b.status}
                               </span>
-                            </td>
-                            <td>
-                              <div style={{ display: 'flex', gap: '8px' }}>
-                                <button className="btn-secondary btn-small" onClick={() => setSelectedBillDetail(b)}>View</button>
-                                <button className="btn-secondary btn-small" onClick={() => handleDownloadBillPDF(b.id, b)}>
-                                  <Download size={14} /> PDF
-                                </button>
-                                {b.status === 'UNPAID' && (
-                                  <button
-                                    className="btn-primary btn-small"
-                                    onClick={() => handlePayBillCustomer(b.id)}
-                                    style={{ background: '#047857', borderColor: '#047857', padding: '6px 10px' }}
-                                  >
-                                    Tick Paid
-                                  </button>
-                                )}
+                            </div>
+                            <div className="cust-bill-card-body">
+                              <div className="cust-bill-card-row">
+                                <span className="cust-bill-card-label">Invoice Date</span>
+                                <span className="cust-bill-card-val">{new Date(b.createdAt).toLocaleDateString()}</span>
                               </div>
-                            </td>
-                          </tr>
-                        )) : (
-                          <tr>
-                            <td colSpan="4" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '15px', fontSize: '0.85rem' }}>
-                              No material bills generated.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Mobile Cart View */}
-                  <div className="customer-bills-cards-mobile">
-                    {bills.length > 0 ? (
-                      bills.map(b => (
-                        <div key={b.id} className="cust-bill-card">
-                          <div className="cust-bill-card-header">
-                            <strong className="cust-bill-card-number">{b.billNumber}</strong>
-                            <span className={`badge ${b.status === 'PAID' ? 'badge-completed' : (b.status === 'PENDING_APPROVAL' ? 'badge-pending' : 'badge-unpaid')}`}>
-                              {b.status === 'PENDING_APPROVAL' ? 'PENDING APPROVAL' : b.status}
-                            </span>
-                          </div>
-                          <div className="cust-bill-card-body">
-                            <div className="cust-bill-card-row">
-                              <span className="cust-bill-card-label">Invoice Date</span>
-                              <span className="cust-bill-card-val">{new Date(b.createdAt).toLocaleDateString()}</span>
+                              <div className="cust-bill-card-row">
+                                <span className="cust-bill-card-label">Total Amount</span>
+                                <span className="cust-bill-card-amount">₹{b.totalAmount.toFixed(2)}</span>
+                              </div>
                             </div>
-                            <div className="cust-bill-card-row">
-                              <span className="cust-bill-card-label">Total Amount</span>
-                              <span className="cust-bill-card-amount">₹{b.totalAmount.toFixed(2)}</span>
-                            </div>
-                          </div>
-                          <div className="cust-bill-card-actions">
-                            <button
-                              className="btn-secondary btn-small cust-bill-card-btn"
-                              onClick={() => handleDownloadBillPDF(b.id, b)}
-                            >
-                              <Download size={14} /> Download
-                            </button>
-                            {b.status === 'UNPAID' && (
+                            <div className="cust-bill-card-actions">
                               <button
-                                className="btn-primary btn-small cust-bill-card-btn"
-                                onClick={() => handlePayBillCustomer(b.id)}
-                                style={{ background: '#047857', borderColor: '#047857', color: '#fff' }}
+                                className="btn-secondary btn-small cust-bill-card-btn"
+                                onClick={() => handleDownloadBillPDF(b.id, b)}
                               >
-                                Tick Paid
+                                <Download size={14} /> Download
                               </button>
-                            )}
+                              {b.status === 'UNPAID' && (
+                                <button
+                                  className="btn-primary btn-small cust-bill-card-btn"
+                                  onClick={() => handlePayBillCustomer(b.id)}
+                                  style={{ background: '#047857', borderColor: '#047857', color: '#fff' }}
+                                >
+                                  Tick Paid
+                                </button>
+                              )}
+                            </div>
                           </div>
+                        ))
+                      ) : (
+                        <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '25px 15px', fontSize: '0.9rem' }}>
+                          No material bills generated.
                         </div>
-                      ))
-                    ) : (
-                      <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '25px 15px', fontSize: '0.9rem' }}>
-                        No material bills generated.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+                      )}
+                    </div>
+                  </>
+                )}
 
-              {/* Payment Ledger Sub-tab */}
-              {billingSubTab === 'ledger' && (
-                <div className="glass-card">
-                  <h3 style={{ marginBottom: '15px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <CreditCard size={18} color="var(--color-success)" /> Your Payment Ledger
-                  </h3>
-
-                  {/* Desktop Table View */}
-                  <div className="data-table-container payment-ledger-table-desktop">
-                    <table className="data-table">
-                      <thead>
-                        <tr><th>Date</th><th>Type</th><th>Amount</th></tr>
-                      </thead>
-                      <tbody>
-                        {payments.length > 0 ? (
-                          payments.map(p => (
-                            <tr key={p.id}>
-                              <td>{new Date(p.paymentDate).toLocaleDateString()}</td>
-                              <td style={{ fontSize: '0.8rem' }}>
-                                {p.paymentType === 'CONTRACT_PAYMENT' ? '📅 Contract' : '🔧 Materials'}
+                {/* Payment Ledger Sub-tab */}
+                {billingSubTab === 'ledger' && (
+                  <>
+                    {/* Desktop Table View */}
+                    <div className="data-table-container payment-ledger-table-desktop">
+                      <table className="data-table">
+                        <thead>
+                          <tr><th>Date</th><th>Type</th><th>Amount</th></tr>
+                        </thead>
+                        <tbody>
+                          {payments.length > 0 ? (
+                            payments.map(p => (
+                              <tr key={p.id}>
+                                <td>{new Date(p.paymentDate).toLocaleDateString()}</td>
+                                <td style={{ fontSize: '0.8rem' }}>
+                                  {p.paymentType === 'CONTRACT_PAYMENT' ? '📅 Contract' : '🔧 Materials'}
+                                </td>
+                                <td>₹{p.amount.toFixed(2)}</td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan="3" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '15px', fontSize: '0.85rem' }}>
+                                No logged payments found.
                               </td>
-                              <td>₹{p.amount.toFixed(2)}</td>
                             </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td colSpan="3" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '15px', fontSize: '0.85rem' }}>
-                              No logged payments found.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
 
-                  {/* Mobile Activity History Style Cards */}
-                  <div className="payment-ledger-cards-mobile">
-                    {payments.length > 0 ? (
-                      payments.map(p => (
-                        <div key={p.id} className="ledger-card">
-                          <div className="ledger-card-top">
-                            <span className="ledger-card-date">{new Date(p.paymentDate).toLocaleString()}</span>
-                            <span className="badge badge-quotation">
-                              {p.paymentType === 'CONTRACT_PAYMENT' ? 'Contract' : 'Material'}
-                            </span>
+                    {/* Mobile Activity History Style Cards */}
+                    <div className="payment-ledger-cards-mobile">
+                      {payments.length > 0 ? (
+                        payments.map(p => (
+                          <div key={p.id} className="ledger-card">
+                            <div className="ledger-card-top">
+                              <span className="ledger-card-date">{new Date(p.paymentDate).toLocaleString()}</span>
+                              <span className="badge badge-quotation">
+                                {p.paymentType === 'CONTRACT_PAYMENT' ? 'Contract' : 'Material'}
+                              </span>
+                            </div>
+                            <div className="ledger-card-content">
+                              <strong className="ledger-card-title">
+                                {p.paymentType === 'CONTRACT_PAYMENT' ? 'Maintenance Contract Payment' : 'Material Bill Payment'}
+                              </strong>
+                              <span className="ledger-card-amount">₹{p.amount.toFixed(2)}</span>
+                            </div>
                           </div>
-                          <div className="ledger-card-content">
-                            <strong className="ledger-card-title">
-                              {p.paymentType === 'CONTRACT_PAYMENT' ? 'Maintenance Contract Payment' : 'Material Bill Payment'}
-                            </strong>
-                            <span className="ledger-card-amount">₹{p.amount.toFixed(2)}</span>
-                          </div>
+                        ))
+                      ) : (
+                        <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '25px 15px', fontSize: '0.9rem' }}>
+                          No logged payments found.
                         </div>
-                      ))
-                    ) : (
-                      <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '25px 15px', fontSize: '0.9rem' }}>
-                        No logged payments found.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 

@@ -46,8 +46,16 @@ public class CustomerController {
 
     @PostMapping
     public ResponseEntity<?> createCustomer(@RequestBody CustomerCreationRequest request) {
+        if (request.getName() == null || request.getName().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Customer name is required."));
+        }
+
+        if (request.getPassword() == null || request.getPassword().trim().length() < 8) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Initial password is required and must be at least 8 characters long."));
+        }
+
         Customer customer = Customer.builder()
-                .name(request.getName())
+                .name(request.getName().trim())
                 .customerType(request.getCustomerType())
                 .contactPerson(request.getContactPerson())
                 .phone(request.getPhone())
@@ -68,7 +76,7 @@ public class CustomerController {
         User user = User.builder()
                 .username(username)
                 .email(request.getEmail())
-                .password(passwordEncoder.encode("123")) // default password is 123
+                .password(passwordEncoder.encode(request.getPassword().trim()))
                 .role("CUSTOMER")
                 .customer(savedCustomer)
                 .build();
@@ -93,7 +101,6 @@ public class CustomerController {
         Map<String, Object> response = new HashMap<>();
         response.put("customer", savedCustomer);
         response.put("generatedUsername", username);
-        response.put("generatedPassword", "123");
 
         return ResponseEntity.ok(response);
     }
@@ -311,28 +318,6 @@ public class CustomerController {
         return ResponseEntity.ok(savedPayment);
     }
 
-    @PostMapping("/{id}/reset-password")
-    public ResponseEntity<?> resetPassword(@PathVariable Long id, @RequestBody Map<String, String> body) {
-        String newPassword = body.get("password");
-        if (newPassword == null || newPassword.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Password cannot be empty."));
-        }
-
-        Optional<User> userOpt = userRepository.findAll().stream()
-                .filter(u -> u.getCustomer() != null && id.equals(u.getCustomer().getId()))
-                .findFirst();
-
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Login account for this customer was not found."));
-        }
-
-        User user = userOpt.get();
-        user.setPassword(passwordEncoder.encode(newPassword));
-        userRepository.save(user);
-
-        return ResponseEntity.ok(Map.of("message", "Customer password reset successfully."));
-    }
-
     @GetMapping("/{id}/credentials")
     public ResponseEntity<?> getCustomerCredentials(@PathVariable Long id) {
         Optional<User> userOpt = userRepository.findAll().stream()
@@ -354,6 +339,7 @@ public class CustomerController {
         private String phone;
         private String email;
         private String address;
+        private String password;
         private ContractRequest contract;
     }
 
