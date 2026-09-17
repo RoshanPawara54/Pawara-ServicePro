@@ -32,10 +32,24 @@ backend/*.iml
 backend/.idea/
 dependency-reduced-pom.xml
 
-# Environment variables (secrets - never commit)
+# ============================================================
+# SENSITIVE FILES — NEVER COMMIT
+# ============================================================
+
+# Frontend environment variables (contains VITE_API_URL and any keys)
 .env
 .env.*
 
+# Backend real config (contains DB password, JWT secret, SMTP password)
+# Only application.properties.example is safe to commit
+backend/src/main/resources/application.properties
+backend/src/main/resources/application-local.properties
+backend/src/main/resources/application-*.properties
+!backend/src/main/resources/application.properties.example
+
+# Local test / debug scripts
+test_login_direct.ps1
+*.ps1
+
 # Project notes (local only)
 PROJECT_OVERVIEW.txt
-

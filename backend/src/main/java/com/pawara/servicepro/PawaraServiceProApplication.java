@@ -2,6 +2,7 @@ package com.pawara.servicepro;
 
 import com.pawara.servicepro.model.*;
 import com.pawara.servicepro.repository.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -15,6 +16,9 @@ import java.util.Optional;
 
 @SpringBootApplication
 public class PawaraServiceProApplication {
+
+	@Value("${pawara.admin.seed-password}")
+	private String adminSeedPassword;
 
 	public static void main(String[] args) {
 		SpringApplication.run(PawaraServiceProApplication.class, args);
@@ -30,23 +34,16 @@ public class PawaraServiceProApplication {
 			PaymentRepository paymentRepository,
 			PasswordEncoder passwordEncoder) {
 		return (args) -> {
-			// 1. Seed Owner (admin / 123)
+			// 1. Seed Owner account on first startup
 			Optional<User> adminOpt = userRepository.findByUsername("admin");
 			if (adminOpt.isEmpty()) {
 				User owner = User.builder()
 						.username("admin")
-						.email("jankirampawara@gmail.com")
-						.password(passwordEncoder.encode("123"))
+						.password(passwordEncoder.encode(adminSeedPassword))
 						.role("OWNER")
 						.build();
 				userRepository.save(owner);
-				System.out.println("Seeded owner account: admin / 123");
-			} else {
-				User admin = adminOpt.get();
-				if (admin.getEmail() == null || admin.getEmail().isBlank()) {
-					admin.setEmail("jankirampawara@gmail.com");
-					userRepository.save(admin);
-				}
+				System.out.println("Seeded owner account: admin");
 			}
 
 			// 2. Seed Customer Data if empty

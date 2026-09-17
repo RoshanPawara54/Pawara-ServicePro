@@ -1,0 +1,46 @@
+# ============================================================
+# Pawara ServicePro — Backend Configuration
+# ALL secret values must be provided as environment variables.
+# Copy this file to application-local.properties for local dev,
+# fill in real values there, and NEVER commit that file.
+# ============================================================
+
+# Server
+server.port=${PORT:8080}
+
+# Database (Supabase PostgreSQL)
+spring.datasource.url=${DB_URL}
+spring.datasource.username=${DB_USERNAME}
+spring.datasource.password=${DB_PASSWORD}
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+# Hibernate / JPA
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=false
+
+# JWT
+pawara.jwt.secret=${JWT_SECRET}
+pawara.jwt.expiration-ms=86400000
+
+# Logging
+logging.level.org.springframework.security=WARN
+
+# Frontend URL (used in password-reset email links)
+pawara.app.frontend-url=${FRONTEND_URL}
+
+# Email / SMTP
+spring.mail.host=${MAIL_HOST:smtp.gmail.com}
+spring.mail.port=${MAIL_PORT:587}
+spring.mail.username=${MAIL_USERNAME}
+spring.mail.password=${MAIL_PASSWORD}
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+pawara.mail.from=${MAIL_FROM}
+pawara.mail.sender-name=${MAIL_SENDER_NAME:Pawara ServicePro}
+
+# CORS — add your Vercel production URL here
+pawara.cors.allowed-origins=${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174}
+
+# Admin seed password (used only on first startup if admin does not exist)
+pawara.admin.seed-password=${ADMIN_SEED_PASSWORD}
