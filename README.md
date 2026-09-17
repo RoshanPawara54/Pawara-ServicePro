@@ -148,6 +148,28 @@ The system supports:
 - Permanent deletion
 
 ---
+## 📸 Screenshots
+
+### Owner Dashboard
+
+![Owner Dashboard](screenshots/dashboard.png)
+
+### Customer Management
+
+![Customer Management](screenshots/customers.png)
+
+### Billing & Invoices
+
+![Billing & Invoices](screenshots/billing.png)
+
+### Maintenance Requests
+
+![Maintenance Requests](screenshots/maintenance.png)
+
+### Revenue Analytics
+
+![Revenue Analytics](screenshots/analytics.png)
+
 
 ## 🏗️ System Architecture
 
@@ -733,25 +755,3 @@ Backend Developer | Java & Spring Boot
 ## ⭐ Project
 
 If you find this project useful or interesting, consider giving the repository a ⭐.
-
-## 📸 Screenshots
-
-### Owner Dashboard
-
-![Owner Dashboard](screenshots/dashboard.png)
-
-### Customer Management
-
-![Customer Management](screenshots/customers.png)
-
-### Billing & Invoices
-
-![Billing & Invoices](screenshots/billing.png)
-
-### Maintenance Requests
-
-![Maintenance Requests](screenshots/maintenance.png)
-
-### Revenue Analytics
-
-![Revenue Analytics](screenshots/analytics.png)
