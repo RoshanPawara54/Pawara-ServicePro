@@ -28,7 +28,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    @Value("${pawara.app.frontend-url}")
+    @Value("${FRONTEND_URL:http://localhost:5173}")
     private String frontendUrl;
 
     @Bean
