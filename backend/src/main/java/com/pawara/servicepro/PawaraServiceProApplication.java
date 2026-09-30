@@ -3,6 +3,7 @@ package com.pawara.servicepro;
 import com.pawara.servicepro.model.*;
 import com.pawara.servicepro.repository.*;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -17,14 +18,14 @@ import java.util.Optional;
 @SpringBootApplication
 public class PawaraServiceProApplication {
 
-	@Value("${pawara.admin.seed-password}")
-	private String adminSeedPassword;
+	// Removed class-level adminSeedPassword; it will be injected conditionally in the dev profile.
 
 	public static void main(String[] args) {
 		SpringApplication.run(PawaraServiceProApplication.class, args);
 	}
 
 	@Bean
+	@Profile("dev")
 	public CommandLineRunner demo(
 			UserRepository userRepository,
 			CustomerRepository customerRepository,
@@ -32,7 +33,8 @@ public class PawaraServiceProApplication {
 			MaintenanceRequestRepository requestRepository,
 			BillRepository billRepository,
 			PaymentRepository paymentRepository,
-			PasswordEncoder passwordEncoder) {
+			PasswordEncoder passwordEncoder,
+			@Value("${pawara.admin.seed-password}") String adminSeedPassword) {
 		return (args) -> {
 			// 1. Seed Owner account on first startup
 			Optional<User> adminOpt = userRepository.findByUsername("admin");
